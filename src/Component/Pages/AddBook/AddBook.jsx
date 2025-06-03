@@ -235,6 +235,7 @@ const AddBook = () => {
           </div>
         </div>
 
+
         {/* Upvotes */}
         <div className="flex flex-col">
           <label htmlFor="upvotes" className="mb-1 font-medium text-gray-700 dark:text-gray-300">

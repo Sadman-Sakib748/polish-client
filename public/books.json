@@ -1,0 +1,86 @@
+[
+    {
+        "id": 1,
+        "title": "The Midnight Library",
+        "author": "Matt Haig",
+        "category": "Fiction",
+        "cover": "/placeholder.svg?height=300&width=200",
+        "upvotes": 245,
+        "rating": 4.8,
+        "status": "Read",
+        "user": {
+            "name": "Alice Johnson",
+            "email": "alice@example.com"
+        }
+    },
+    {
+        "id": 2,
+        "title": "Atomic Habits",
+        "author": "James Clear",
+        "category": "Non-Fiction",
+        "cover": "/placeholder.svg?height=300&width=200",
+        "upvotes": 189,
+        "rating": 4.9,
+        "status": "Reading",
+        "user": {
+            "name": "Bob Smith",
+            "email": "bob@example.com"
+        }
+    },
+    {
+        "id": 3,
+        "title": "The Seven Husbands of Evelyn Hugo",
+        "author": "Taylor Jenkins Reid",
+        "category": "Fiction",
+        "cover": "/placeholder.svg?height=300&width=200",
+        "upvotes": 167,
+        "rating": 4.7,
+        "status": "Want-to-Read",
+        "user": {
+            "name": "Carol Davis",
+            "email": "carol@example.com"
+        }
+    },
+    {
+        "id": 4,
+        "title": "Dune",
+        "author": "Frank Herbert",
+        "category": "Fantasy",
+        "cover": "/placeholder.svg?height=300&width=200",
+        "upvotes": 156,
+        "rating": 4.6,
+        "status": "Read",
+        "user": {
+            "name": "David Wilson",
+            "email": "david@example.com"
+        }
+    },
+    {
+        "id": 5,
+        "title": "Educated",
+        "author": "Tara Westover",
+        "category": "Non-Fiction",
+        "cover": "/placeholder.svg?height=300&width=200",
+        "upvotes": 134,
+        "rating": 4.8,
+        "status": "Reading",
+        "user": {
+            "name": "Eva Brown",
+            "email": "eva@example.com"
+        }
+    },
+    {
+        "id": 6,
+        "title": "The Name of the Wind",
+        "author": "Patrick Rothfuss",
+        "category": "Fantasy",
+        "cover": "/placeholder.svg?height=300&width=200",
+        "upvotes": 128,
+        "rating": 4.5,
+        "status": "Want-to-Read",
+        "user": {
+            "name": "Frank Miller",
+            "email": "frank@example.com"
+        }
+    }
+]

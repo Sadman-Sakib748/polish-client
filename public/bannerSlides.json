@@ -1,0 +1,23 @@
+[
+  {
+    "id": 1,
+    "title": "Discover Your Next Great Read",
+    "subtitle": "Join thousands of book lovers in building their digital library",
+    "image": "https://i.ibb.co/LXzCfwk9/a46b4c4e-7027-4f18-909a-38e4964ada6d.jpg",
+    "cta": "Start Reading"
+  },
+  {
+    "id": 2,
+    "title": "Track Your Reading Journey",
+    "subtitle": "Monitor your progress and celebrate your achievements",
+    "image": "https://i.ibb.co/Pz14mC7W/e219b390-eeb4-45b8-ae6b-8af3d69b43d4.jpg",
+    "cta": "View Progress"
+  },
+  {
+    "id": 3,
+    "title": "Share Your Reviews",
+    "subtitle": "Help others discover amazing books through your insights",
+    "image": "https://i.ibb.co/LDqzbMbN/c29d0b31-4c92-4bfb-8270-eca468a3f887.jpg",
+    "cta": "Write Review"
+  }
+]

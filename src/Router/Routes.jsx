@@ -9,6 +9,7 @@ import Error404 from "../Component/Error404/Error404";
 import Bookshelf from "../Component/Pages/Bookshelf/Bookshelf";
 import AddBook from "../Component/Pages/AddBook/AddBook";
 import MyBooks from "../Component/Pages/MyBooks/MyBooks";
+import profileDetails from "../Component/Pages/profileDetails/profileDetails";
 
 
 
@@ -30,12 +31,23 @@ export const router = createBrowserRouter([
                 path: 'AddBook',
                 element: <AddBook></AddBook>
             },
-           
             {
-                path: 'MyBooks',
-                element: <MyBooks></MyBooks>
+                path: 'profile',
+                element: <profileDetails></profileDetails>
             },
+
             {
+                path: "MyBooks/:id",
+                element: <MyBooks />,
+                loader: async ({ params }) => {
+                    const res = await fetch(`http://localhost:3000/books/${params._id}`);
+                    if (!res.ok) {
+                        throw new Response("Book not found", { status: 404 });
+                    }
+                    const data = await res.json();
+                    return data;  // Return single book object
+                },
+
                 path: 'register',
                 element: <Register />
             },

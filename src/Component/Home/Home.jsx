@@ -1,11 +1,19 @@
+import BannerHome from "../Pages/BannerHome/BannerHome";
+import CallToAction from "../Pages/CallToAction/CallToAction";
+import CommunityStats from "../Pages/CommunityStats/CommunityStats";
+import FeaturedCategories from "../Pages/FeaturedCategories/FeaturedCategories";
+import PopularBooks from "../Pages/PopularBooks/PopularBooks";
 
-import Banner from '../Pages/Banner/Banner';
+
 
 const Home = () => {
     return (
         <div>
-            <Banner></Banner>
-            <h3>this is home page</h3>
+            <BannerHome></BannerHome>
+            <PopularBooks></PopularBooks>
+            <FeaturedCategories />
+            <CommunityStats />
+            <CallToAction />
         </div>
     );
 };

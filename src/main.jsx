@@ -11,6 +11,7 @@ import AuthProviders from './Providers/AuthProviders';
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <AuthProviders>
+
       <RouterProvider router={router} />
     </AuthProviders>
   </StrictMode>,

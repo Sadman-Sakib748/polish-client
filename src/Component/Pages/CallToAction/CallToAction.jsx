@@ -26,6 +26,7 @@ const CallToAction = () => {
           Sign Up Now
         </motion.button>
       </motion.div>
+      
     </section>
   );
 };

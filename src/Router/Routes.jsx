@@ -11,6 +11,7 @@ import AddBook from "../Component/Pages/AddBook/AddBook";
 import MyBooks from "../Component/Pages/MyBooks/MyBooks";
 import ProfileDetails from "../Component/Pages/profileDetails/profileDetails";
 import CreatePage from "../Component/Pages/CreatePAge/CreatePage";
+import CreateBookForm from "../Component/Pages/Modal/CreateBookForm";
 
 
 
@@ -39,7 +40,7 @@ export const router = createBrowserRouter([
             },
             {
                 path: 'myGroup/:email',
-                loader: ({params}) => fetch(`http://localhost:3000/booking/${params.email}`) ,
+                loader: ({ params }) => fetch(`http://localhost:3000/booking/${params.email}`),
                 element: <CreatePage></CreatePage>,
             },
 
@@ -49,6 +50,12 @@ export const router = createBrowserRouter([
                 loader: ({ params }) => fetch(`http://localhost:3000/books/${params.id}`)
 
             },
+            {
+                path: "books/:id/edit",
+                element: <CreateBookForm />,
+                loader: ({ params }) => fetch(`http://localhost:3000/books/${params.id}`)
+            },
+
             {
 
                 path: 'signUp',

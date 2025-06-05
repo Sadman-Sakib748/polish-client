@@ -2,7 +2,7 @@ import { Link } from "react-router";
 import { motion } from "framer-motion";
 import { Edit, Trash, Star } from "lucide-react";
 
-const BookCard = ({ book, onDelete, index }) => {
+const BookCard = ({ book, onDelete, index,userEmail }) => {
     const status = book.status || book.readingStatus || "";
 
     const getStatusColor = (status) => {
@@ -59,6 +59,9 @@ const BookCard = ({ book, onDelete, index }) => {
                 <h3 className="font-semibold text-lg">{book.title}</h3>
                 <p className="text-sm text-gray-600">By {book.author}</p>
                 <p className="text-sm text-gray-700 line-clamp-3">{book.overview}</p>
+                <p className="text-sm text-gray-700 line-clamp-3">{book.userEmail}</p>
+                <p className="text-sm text-gray-700 line-clamp-3">{book.displayName}</p>
+                <p className="text-sm text-gray-700 line-clamp-3">{book.title}</p>
                 <div className="mt-2 flex items-center gap-1 text-yellow-500">
                     <Star className="h-4 w-4" />
                     <span>{book.rating ?? "N/A"}</span>

@@ -6,8 +6,8 @@ import BookCard from "../Modal/BookCard";
 import Filters from "../Modal/Filters";
 import Stats from "../Modal/Stats";
 import Header from "../Modal/Header";
-
-
+import LoadingSpinner from "../../LoadingSpinner/LoadingSpinner";
+import CreateBookForm from "../Modal/CreateBookForm";
 
 const CreatePage = () => {
   const { user } = useAuth();
@@ -21,7 +21,10 @@ const CreatePage = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [bookToDelete, setBookToDelete] = useState(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [editBook, setEditBook] = useState(null); // For editing a book
 
+  // Fetch user books on mount or when userEmail changes
   useEffect(() => {
     if (!userEmail) return;
 
@@ -39,6 +42,7 @@ const CreatePage = () => {
       });
   }, [userEmail, axiosPublic]);
 
+  // Delete book handler
   const handleDeleteBook = async (bookId) => {
     try {
       await axiosPublic.delete(`/books/${bookId}`);
@@ -50,6 +54,30 @@ const CreatePage = () => {
     }
   };
 
+  // Create or update book handler
+  const handleCreateOrUpdateBook = async (bookData) => {
+    try {
+      if (editBook) {
+        // Update existing book
+        const res = await axiosPublic.put(`/books/${editBook._id}`, bookData);
+        setBooks((prev) =>
+          prev.map((b) => (b._id === editBook._id ? res.data : b))
+        );
+      } else {
+        // Create new book
+        const res = await axiosPublic.post("/books", bookData);
+        setBooks((prev) => [...prev, res.data]);
+      }
+      // Close form and reset editBook state after success
+      setShowCreateForm(false);
+      setEditBook(null);
+    } catch (err) {
+      console.error("Failed to create/update book:", err);
+      alert("Failed to save book. Try again.");
+    }
+  };
+
+  // Filtering logic
   const filteredBooks = books.filter((book) => {
     const matchesSearch =
       book.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -65,12 +93,37 @@ const CreatePage = () => {
   const getStatusCount = (status) =>
     books.filter((book) => (book.status === status || book.readingStatus === status)).length;
 
-  if (loading) return <div className="text-center p-10">Loading books...</div>;
+  if (loading) return <LoadingSpinner />;
   if (error) return <p className="text-center text-red-600">{error}</p>;
 
   return (
     <div className="min-h-screen pt-16 bg-gray-50">
       <Header />
+
+      <div className="container mx-auto px-4 text-right mt-4">
+        <button
+          onClick={() => {
+            setShowCreateForm((v) => !v);
+            setEditBook(null); // Reset edit mode on toggling
+          }}
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        >
+          {showCreateForm ? "Cancel" : "Add Book"}
+        </button>
+      </div>
+
+      {showCreateForm && (
+        <CreateBookForm
+          defaultValues={editBook || {}}
+          onSubmit={handleCreateOrUpdateBook}
+          onCancel={() => {
+            setShowCreateForm(false);
+            setEditBook(null);
+          }}
+          displayName={user?.displayName || ""}
+          email={user?.email || ""}
+        />
+      )}
 
       <Stats
         stats={[
@@ -98,7 +151,17 @@ const CreatePage = () => {
           {filteredBooks.length > 0 ? (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {filteredBooks.map((book, i) => (
-                <BookCard key={book._id || book.id} book={book} onDelete={setBookToDelete} index={i} />
+                <BookCard
+                  key={book._id || book.id}
+                  userEmail={userEmail}
+                  book={book}
+                  onDelete={setBookToDelete}
+                  onEdit={() => {
+                    setEditBook(book);
+                    setShowCreateForm(true);
+                  }}
+                  index={i}
+                />
               ))}
             </div>
           ) : (

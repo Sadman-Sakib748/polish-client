@@ -1,110 +1,155 @@
-import axios from "axios";
 import { useParams } from "react-router";
 import useAuth from "../../../hooks/useAuth";
 import { useEffect, useState } from "react";
-import { Star, Heart, MessageCircle, Edit, Trash2, User } from "lucide-react";
+import { Star, Heart, MessageCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAxiosPublic } from "../../../hooks/useAxiosePublic";
+import ReviewSection from "../ReviewSection/ReviewSection";
+import LoadingSpinner from "../../LoadingSpinner/LoadingSpinner";
+import toast from "react-hot-toast";
 
 const MyBooks = () => {
   const { id } = useParams();
   const { user } = useAuth();
-
   const [currentBook, setCurrentBook] = useState(null);
   const [votedBooks, setVotedBooks] = useState(new Set());
   const [newReview, setNewReview] = useState("");
   const [bookReviews, setBookReviews] = useState([]);
-  const axiousPublic = useAxiosPublic();
+  const axiosPublic = useAxiosPublic();
 
   const currentUser = user || {
     displayName: "Anonymous",
     email: "unknown@example.com",
   };
 
+  // Fetch book details and reviews
   useEffect(() => {
+    if (!id) return;
+
     const fetchBook = async () => {
       try {
-        const response = await axiousPublic.get(`/books/${id}`);
+        const response = await axiosPublic.get(`/books/${id}`);
         setCurrentBook(response.data);
       } catch (error) {
         console.error("Failed to fetch book:", error);
+        toast.error("Failed to load book details.");
       }
     };
-    fetchBook();
-  }, [id]);
 
+    const fetchReviews = async () => {
+      try {
+        const response = await axiosPublic.get(`/reviews/${id}`);
+        setBookReviews(response.data);
+      } catch (error) {
+        console.error("Failed to fetch reviews:", error);
+        toast.error("Failed to load reviews.");
+      }
+    };
+
+    fetchBook();
+    fetchReviews();
+  }, [id, axiosPublic]);
+
+  // Load voted books from localStorage on mount
   useEffect(() => {
     const storedVotes = JSON.parse(localStorage.getItem("votedBooks") || "[]");
     setVotedBooks(new Set(storedVotes));
   }, []);
 
+  // Persist voted books to localStorage when updated
   useEffect(() => {
     localStorage.setItem("votedBooks", JSON.stringify(Array.from(votedBooks)));
   }, [votedBooks]);
 
+  // Upvote handler
+  const handleUpvote = async (bookId) => {
+    if (votedBooks.has(bookId)) return;
 
-const handleUpvote = async (bookId) => {
-  if (votedBooks.has(bookId)) return;
-
-  setVotedBooks((prev) => new Set(prev).add(bookId));
-  setCurrentBook((prev) => ({
-    ...prev,
-    upvotes: (prev?.upvotes || 0) + 1,
-  }));
-
-  try {
-    const response = await axiousPublic.post(
-      `/books/${bookId}/upvote`,
-      {},
-      {
-        headers: { "Content-Type": "application/json" },
-      }
-    );
-
-    const updatedBook = response.data;
-    setCurrentBook(updatedBook);
-  } catch (error) {
-    console.error("Upvote error:", error.message);
-    setVotedBooks((prev) => {
-      const copy = new Set(prev);
-      copy.delete(bookId);
-      return copy;
-    });
+    setVotedBooks((prev) => new Set(prev).add(bookId));
     setCurrentBook((prev) => ({
       ...prev,
-      upvotes: (prev?.upvotes || 1) - 1,
+      upvotes: (prev?.upvotes || 0) + 1,
     }));
-  }
-};
 
+    try {
+      const response = await axiosPublic.patch(`/books/upvote/${bookId}`);
+      setCurrentBook(response.data);
+    } catch (error) {
+      console.error("Upvote error:", error.message);
+      toast.error("Failed to upvote.");
 
-  const handleSubmitReview = () => {
-    if (!newReview.trim()) return;
-
-    const review = {
-      id: Date.now(),
-      user: {
-        name: currentUser.displayName,
-        email: currentUser.email,
-        avatar: "/placeholder.svg",
-      },
-      text: newReview,
-      createdAt: new Date().toISOString().split("T")[0],
-    };
-
-    setBookReviews([review, ...bookReviews]);
-    setNewReview("");
+      // Rollback on error
+      setVotedBooks((prev) => {
+        const copy = new Set(prev);
+        copy.delete(bookId);
+        return copy;
+      });
+      setCurrentBook((prev) => ({
+        ...prev,
+        upvotes: (prev?.upvotes || 1) - 1,
+      }));
+    }
   };
 
-  const handleDeleteReview = (reviewId) => {
-    setBookReviews(bookReviews.filter((review) => review.id !== reviewId));
+  // Submit a new review
+  const handleSubmitReview = async () => {
+    if (!newReview.trim()) {
+      toast.error("Review cannot be empty.");
+      return;
+    }
+
+    try {
+      const reviewData = {
+        user: {
+          name: currentUser.displayName,
+          email: currentUser.email,
+          avatar: currentUser.photoURL || null,
+        },
+        text: newReview.trim(),
+        rating: 5,
+      };
+
+      const response = await axiosPublic.post(`/reviews/${id}`, reviewData, {
+        headers: { "Content-Type": "application/json" },
+      });
+
+      const insertedId = response.data?.reviewId;
+
+      if (insertedId) {
+        const newPostedReview = {
+          _id: insertedId,
+          ...reviewData,
+          createdAt: new Date().toISOString(),
+        };
+
+        setBookReviews((prev) => [newPostedReview, ...prev]);
+        toast.success("Review posted successfully!");
+        setNewReview("");
+      } else {
+        toast.error("Something went wrong. Review not saved.");
+      }
+    } catch (error) {
+      console.error("Failed to submit review:", error);
+      toast.error(error.response?.data?.error || "Failed to post review.");
+    }
+  };
+
+  // Delete a review
+  const handleDeleteReview = async (reviewId) => {
+    try {
+      await axiosPublic.delete(`/reviews/${reviewId}`);
+      setBookReviews((prev) => prev.filter((review) => review._id !== reviewId));
+      toast.success("Review deleted.");
+    } catch (error) {
+      console.error("Failed to delete review:", error);
+      toast.error("Failed to delete review.");
+    }
   };
 
   return (
     <div className="min-h-screen pt-16 bg-gray-100 px-4 py-8">
       {currentBook ? (
         <div className="max-w-6xl mx-auto grid gap-8 lg:grid-cols-3">
-          {/* Destructuring for clean access */}
           {(() => {
             const {
               title,
@@ -167,10 +212,10 @@ const handleUpvote = async (bookId) => {
                         }`}
                       >
                         <Heart
-                          className={`w-4 h-4 ${
+                          className={`w-4 h-4 transition-all duration-200 ease-in-out ${
                             votedBooks.has(_id)
-                              ? "fill-red-500 text-red-500"
-                              : ""
+                              ? "fill-red-500 text-red-500 scale-110"
+                              : "text-gray-500 hover:scale-110"
                           }`}
                         />
                         {upvotes || 0}
@@ -225,59 +270,22 @@ const handleUpvote = async (bookId) => {
                     </button>
                   </div>
 
-                  {/* Reviews */}
-                  <div className="bg-white rounded-lg shadow p-6">
-                    <h3 className="text-lg font-semibold mb-4">Reviews ({bookReviews.length})</h3>
-                    <div className="space-y-6">
-                      {bookReviews.map((review) => (
-                        <motion.div
-                          key={review.id}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="border-b pb-4 last:border-b-0"
-                        >
-                          <div className="flex gap-3 items-start">
-                            <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200">
-                              {review.user.avatar ? (
-                                <img src={review.user.avatar} alt={review.user.name} />
-                              ) : (
-                                <User className="w-6 h-6 m-auto mt-2 text-gray-500" />
-                              )}
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex justify-between items-center">
-                                <div>
-                                  <p className="font-medium">{review.user.name}</p>
-                                  <p className="text-sm text-gray-500">{review.createdAt}</p>
-                                </div>
-                                {review.user.email === currentUser.email && (
-                                  <div className="flex gap-2">
-                                    <button className="text-gray-500 hover:text-blue-600">
-                                      <Edit className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                      onClick={() => handleDeleteReview(review.id)}
-                                      className="text-gray-500 hover:text-red-600"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
-                              <p className="mt-2 text-gray-700">{review.text}</p>
-                            </div>
-                          </div>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </div>
+                  {/* Reviews Section */}
+                  <ReviewSection
+                    currentUser={currentUser}
+                    bookReviews={bookReviews}
+                    setBookReviews={setBookReviews}
+                    handleDeleteReview={handleDeleteReview}
+                  />
                 </motion.div>
               </>
             );
           })()}
         </div>
       ) : (
-        <p className="text-center text-gray-600">Loading book...</p>
+        <div className="text-center text-gray-600">
+          <LoadingSpinner />
+        </div>
       )}
     </div>
   );

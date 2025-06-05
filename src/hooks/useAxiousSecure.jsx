@@ -6,7 +6,6 @@ const axiousIntance = axios.create({
 
 const useAxiousSecure = () => {
     const { user, signOutUser } = useAuth();
-
     axiousIntance.interceptors.request.use(config => {
         config.headers.authorization = `Bearer ${user.accessToken}`
         return config;

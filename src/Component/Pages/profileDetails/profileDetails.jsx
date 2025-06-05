@@ -32,28 +32,20 @@ const ProfileDetails = ({ id }) => {
   const [error, setError] = useState(null);
   const axiosPublic = useAxiosPublic();
 
-
   useEffect(() => {
+    if (!id) return;
+
     setLoading(true);
     setError(null);
 
     axiosPublic.get(`/booking/${id}`)
       .then((res) => {
+        console.log("Booking data:", res.data);
         const data = res.data;
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           setBooks(data);
         } else {
-          // Fallback test data with createdAt
-          setBooks([
-            {
-              userName: "Test User",
-              category: "Fiction",
-              readingStatus: "Read",
-              rating: 4,
-              createdAt: "2024-02-15T10:20:00Z",
-              coverPhoto: "https://via.placeholder.com/150",
-            },
-          ]);
+          setBooks([]);
         }
       })
       .catch((err) => {
@@ -87,14 +79,15 @@ const ProfileDetails = ({ id }) => {
     return { name, value, color: colors[i % colors.length] };
   });
 
-  const monthlyData = [
-    { month: "Jan", books: 4 },
-    { month: "Feb", books: 6 },
-    { month: "Mar", books: 3 },
-    { month: "Apr", books: 8 },
-    { month: "May", books: 5 },
-    { month: "Jun", books: 2 },
-  ];
+  const monthlyData = Array.from({ length: 12 }, (_, i) => {
+    const month = new Date(0, i).toLocaleString("default", { month: "short" });
+    const booksInMonth = books.filter((b) => {
+      const createdAt = new Date(b.createdAt);
+      return createdAt.getMonth() === i;
+    }).length;
+
+    return { month, books: booksInMonth };
+  });
 
   if (loading)
     return (
@@ -232,24 +225,41 @@ const ProfileDetails = ({ id }) => {
   );
 };
 
-const StatBox = ({ value, label, color }) => (
-  <div className="text-center">
-    <div className={`text-2xl font-bold text-${color}-600 dark:text-${color}-400`}>{value}</div>
-    <div className="text-sm text-gray-600 dark:text-gray-400">{label}</div>
-  </div>
-);
+const StatBox = ({ value, label, color }) => {
+  const colorClasses = {
+    blue: "text-blue-600 dark:text-blue-400",
+    green: "text-green-600 dark:text-green-400",
+    orange: "text-orange-600 dark:text-orange-400",
+    yellow: "text-yellow-600 dark:text-yellow-400",
+  };
 
-const StatusRow = ({ label, count, color }) => (
-  <div className="flex items-center justify-between">
-    <div className="flex items-center gap-2">
-      <span className={`rounded bg-${color}-500 px-2 py-1 text-xs font-semibold text-white`}>
-        {label.split(" ")[0]}
-      </span>
-      <span>{label}</span>
+  return (
+    <div className="text-center">
+      <div className={`text-2xl font-bold ${colorClasses[color] || ""}`}>{value}</div>
+      <div className="text-sm text-gray-600 dark:text-gray-400">{label}</div>
     </div>
-    <span className="font-semibold">{count}</span>
-  </div>
-);
+  );
+};
+
+const StatusRow = ({ label, count, color }) => {
+  const bgColors = {
+    green: "bg-green-500",
+    blue: "bg-blue-500",
+    orange: "bg-orange-500",
+  };
+
+  return (
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <span className={`rounded px-2 py-1 text-xs font-semibold text-white ${bgColors[color]}`}>
+          {label.split(" ")[0]}
+        </span>
+        <span>{label}</span>
+      </div>
+      <span className="font-semibold">{count}</span>
+    </div>
+  );
+};
 
 const Card = ({ title, children, icon }) => (
   <div className="rounded-lg bg-white dark:bg-gray-800 shadow-md">

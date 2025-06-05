@@ -31,7 +31,7 @@ const CreatePage = () => {
     setLoading(true);
     axiosPublic
       .get(`/booking/${userEmail}`,{
-        withCredentials: true
+        withCredentials: true,
       })
       .then((res) => {
         setBooks(res.data);

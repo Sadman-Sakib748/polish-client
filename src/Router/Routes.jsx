@@ -12,6 +12,7 @@ import MyBooks from "../Component/Pages/MyBooks/MyBooks";
 import ProfileDetails from "../Component/Pages/profileDetails/profileDetails";
 import CreatePage from "../Component/Pages/CreatePAge/CreatePage";
 import CreateBookForm from "../Component/Pages/Modal/CreateBookForm";
+import PrivateRoutes from "../Component/Private/PrivateRoutes";
 
 
 
@@ -31,28 +32,28 @@ export const router = createBrowserRouter([
             },
             {
                 path: 'AddBook',
-                element: <AddBook></AddBook>
+                element: <PrivateRoutes><AddBook></AddBook></PrivateRoutes>
             },
             {
                 path: 'profile',
-                element: <ProfileDetails></ProfileDetails>,
+                element: <PrivateRoutes></PrivateRoutes>,
 
             },
             {
                 path: 'myGroup/:email',
                 loader: ({ params }) => fetch(`http://localhost:3000/booking/${params.email}`),
-                element: <CreatePage></CreatePage>,
+                element: <PrivateRoutes><CreatePage></CreatePage></PrivateRoutes>,
             },
 
             {
                 path: "books/:id",
-                element: <MyBooks />,
+                element: <PrivateRoutes><MyBooks /></PrivateRoutes>,
                 loader: ({ params }) => fetch(`http://localhost:3000/books/${params.id}`)
 
             },
             {
                 path: "books/:id/edit",
-                element: <CreateBookForm />,
+                element: <PrivateRoutes><CreateBookForm /></PrivateRoutes>,
                 loader: ({ params }) => fetch(`http://localhost:3000/books/${params.id}`)
             },
 

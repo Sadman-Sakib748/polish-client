@@ -1,19 +1,20 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { BookOpen, Users, Star } from "lucide-react";
+import { useAxiosPublic } from "../../../hooks/useAxiosePublic";
 
 const CommunityStats = () => {
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [averageRating, setAverageRating] = useState(0);
+  const axiousePublic = useAxiosPublic();
 
   useEffect(() => {
     async function fetchBooks() {
       setLoading(true);
       try {
-        const res = await fetch("http://localhost:3000/books");
-        if (!res.ok) throw new Error("Failed to fetch books");
-        const data = await res.json();
+        const res = await axiousePublic.get("/books");
+        const data = res.data;
         setBooks(data);
 
         // Calculate average rating

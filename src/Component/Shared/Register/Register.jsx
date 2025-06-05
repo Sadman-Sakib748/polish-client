@@ -1,30 +1,56 @@
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import Lottie from "lottie-react";
 import animationData from "../../../assets/register.json";
 import useAuth from "../../../hooks/useAuth";
+import GoogleSignInButton from "../../Pages/GoogleSignInButton/GoogleSignInButton";
 
 const Register = () => {
   const { register, handleSubmit, formState: { errors }, reset } = useForm();
-  const { createUser, updateUserProfile,googleSignIn } = useAuth();
+  const { createUser, updateUserProfile, googleSignIn } = useAuth();
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const onSubmit = (data) => {
+    setError("");
     const { email, password, name, image } = data;
 
     createUser(email, password)
-      .then(res => {
-        updateUserProfile(name, image)
-          .then(() => {
-            console.log("User created and profile updated.");
-            reset();
-          })
-          .catch(error => console.error("Profile update error:", error.message));
+      .then(() => updateUserProfile(name, image))
+      .then(() => {
+        reset();
+        alert("User created and profile updated.");
       })
-      .catch(error => console.error("User creation error:", error.message));
+      .catch(err => {
+        setError(err.message);
+        console.error("Error:", err);
+      });
+  };
+
+  // Google Sign-In Handler
+  const handleGoogleSignIn = () => {
+    setError("");
+    setLoading(true);
+    googleSignIn()
+      .then((result) => {
+        const user = result.user;
+        return updateUserProfile(user?.displayName, user?.photoURL);
+      })
+      .then(() => {
+        alert("Signed in and profile updated with Google!");
+      })
+      .catch(err => {
+        setError(err.message);
+        console.error("Google Sign-In Error:", err);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-200 dark:from-gray-800 dark:to-gray-900 flex flex-col md:flex-row items-center justify-center p-6">
-      
+
       {/* Lottie Animation */}
       <div className="w-full md:w-1/2 flex justify-center mb-10 md:mb-0">
         <div className="w-80 md:w-96">
@@ -34,18 +60,21 @@ const Register = () => {
 
       {/* Form Container */}
       <div className="w-full md:w-1/2 max-w-md bg-white/80 dark:bg-white/10 backdrop-blur-md rounded-xl shadow-2xl p-8">
-        <h2 className="text-3xl font-bold text-center text-gray-800 dark:text-white mb-6">Create Account</h2>
+        <h2 className="text-3xl font-bold text-center text-gray-800 dark:text-white mb-6">
+          Create Account
+        </h2>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+
           {/* Name */}
           <div className="relative">
             <input
               type="text"
+              placeholder=" "
               {...register("name", { required: "Name is required" })}
-              className="peer w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-transparent placeholder-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 dark:text-white"
-              placeholder="Your Name"
+              className="peer w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 dark:text-white"
             />
-            <label className="absolute left-4 top-2 text-gray-500 text-sm peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:top-2 text-xs transition-all">
+            <label className="absolute left-4 top-2 text-gray-500 text-xs peer-placeholder-shown:top-3 peer-placeholder-shown:text-sm peer-placeholder-shown:text-gray-400 peer-focus:top-2 peer-focus:text-xs transition-all">
               Name
             </label>
             {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
@@ -55,11 +84,11 @@ const Register = () => {
           <div className="relative">
             <input
               type="email"
+              placeholder=" "
               {...register("email", { required: "Email is required" })}
-              className="peer w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-transparent placeholder-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 dark:text-white"
-              placeholder="Email"
+              className="peer w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 dark:text-white"
             />
-            <label className="absolute left-4 top-2 text-gray-500 text-sm peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:top-2 text-xs transition-all">
+            <label className="absolute left-4 top-2 text-gray-500 text-xs peer-placeholder-shown:top-3 peer-placeholder-shown:text-sm peer-placeholder-shown:text-gray-400 peer-focus:top-2 peer-focus:text-xs transition-all">
               Email
             </label>
             {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
@@ -69,14 +98,14 @@ const Register = () => {
           <div className="relative">
             <input
               type="password"
+              placeholder=" "
               {...register("password", {
                 required: "Password is required",
                 minLength: { value: 6, message: "At least 6 characters" }
               })}
-              className="peer w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-transparent placeholder-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 dark:text-white"
-              placeholder="Password"
+              className="peer w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 dark:text-white"
             />
-            <label className="absolute left-4 top-2 text-gray-500 text-sm peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:top-2 text-xs transition-all">
+            <label className="absolute left-4 top-2 text-gray-500 text-xs peer-placeholder-shown:top-3 peer-placeholder-shown:text-sm peer-placeholder-shown:text-gray-400 peer-focus:top-2 peer-focus:text-xs transition-all">
               Password
             </label>
             {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>}
@@ -86,15 +115,18 @@ const Register = () => {
           <div className="relative">
             <input
               type="text"
+              placeholder=" "
               {...register("image", { required: "Image URL is required" })}
-              className="peer w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-transparent placeholder-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 dark:text-white"
-              placeholder="Image URL"
+              className="peer w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 dark:text-white"
             />
-            <label className="absolute left-4 top-2 text-gray-500 text-sm peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:top-2 text-xs transition-all">
+            <label className="absolute left-4 top-2 text-gray-500 text-xs peer-placeholder-shown:top-3 peer-placeholder-shown:text-sm peer-placeholder-shown:text-gray-400 peer-focus:top-2 peer-focus:text-xs transition-all">
               Image URL
             </label>
             {errors.image && <p className="text-red-500 text-sm mt-1">{errors.image.message}</p>}
           </div>
+
+          {/* Display error message */}
+          {error && <p className="text-red-600 text-center mb-2">{error}</p>}
 
           <button
             type="submit"
@@ -102,6 +134,9 @@ const Register = () => {
           >
             Register
           </button>
+
+          {/* Google Sign In Button */}
+          <GoogleSignInButton handleGoogleSignIn={handleGoogleSignIn} loading={loading} error={error} />
         </form>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import LoadingSpinner from "../../LoadingSpinner/LoadingSpinner";
+import { useAxiosPublic } from "../../../hooks/useAxiosePublic";
 
 // Define icons per category (you can extend or customize)
 const categoryIcons = {
@@ -20,45 +21,46 @@ const categoryColors = {
 const FeaturedCategories = () => {
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(false);
+    const axiousPublic = useAxiosPublic();
 
-    useEffect(() => {
-        async function fetchBooks() {
-            setLoading(true);
-            try {
-                const res = await fetch("http://localhost:3000/books");
-                if (!res.ok) throw new Error("Failed to fetch books");
-                const books = await res.json();
+useEffect(() => {
+  async function fetchBooks() {
+    setLoading(true);
+    try {
+      const res = await axiousPublic.get("/books");
+      const books = res.data;
 
-                // Group books by category and count them
-                const categoryMap = {};
+      // Group books by category and count them
+      const categoryMap = {};
 
-                books.forEach((book) => {
-                    const cat = book.category || "Unknown";
+      books.forEach((book) => {
+        const cat = book.category || "Unknown";
 
-                    if (!categoryMap[cat]) {
-                        categoryMap[cat] = {
-                            name: cat,
-                            count: 0,
-                            icon: categoryIcons[cat] || "📖",
-                            color: categoryColors[cat] || "bg-gray-500",
-                        };
-                    }
-                    categoryMap[cat].count += 1;
-                });
-
-                // Convert object to array
-                const categoriesArray = Object.values(categoryMap);
-
-                setCategories(categoriesArray);
-            } catch (error) {
-                console.error(error);
-                setCategories([]);
-            } finally {
-                setLoading(false);
-            }
+        if (!categoryMap[cat]) {
+          categoryMap[cat] = {
+            name: cat,
+            count: 0,
+            icon: categoryIcons[cat] || "📖",
+            color: categoryColors[cat] || "bg-gray-500",
+          };
         }
-        fetchBooks();
-    }, []);
+        categoryMap[cat].count += 1;
+      });
+
+      // Convert object to array
+      const categoriesArray = Object.values(categoryMap);
+
+      setCategories(categoriesArray);
+    } catch (error) {
+      console.error(error);
+      setCategories([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+  fetchBooks();
+}, []);
+
 
     if (loading) {
         return (

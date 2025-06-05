@@ -3,38 +3,39 @@ import { motion } from "framer-motion";
 import { Star, TrendingUp } from "lucide-react";
 import { Link } from "react-router"; // use react-router-dom for v6+
 import LoadingSpinner from "../../LoadingSpinner/LoadingSpinner";
+import { useAxiosPublic } from "../../../hooks/useAxiosePublic";
 
 const PopularBooks = () => {
   const [books, setBooks] = useState([]);
   const [popularBooks, setPopularBooks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const axiosPublic = useAxiosPublic();
 
-  useEffect(() => {
-    async function fetchBooks() {
-      setLoading(true);
-      try {
-        const res = await fetch("http://localhost:3000/books");
-        if (!res.ok) throw new Error("Failed to fetch books");
-        const data = await res.json();
+ useEffect(() => {
+  async function fetchBooks() {
+    setLoading(true);
+    try {
+      const res = await axiosPublic.get("/books");
+      const data = res.data;
 
-        // Sort books by upvotes & rating to get top 6
-        const sorted = data
-          .sort((a, b) => b.upvotes - a.upvotes || b.rating - a.rating)
-          .slice(0, 6);
+      // Sort books by upvotes & rating to get top 6
+      const sorted = data
+        .sort((a, b) => b.upvotes - a.upvotes || b.rating - a.rating)
+        .slice(0, 6);
 
-        setBooks(data);
-        setPopularBooks(sorted);
-      } catch (error) {
-        console.error(error);
-        setBooks([]);
-        setPopularBooks([]);
-      } finally {
-        setLoading(false);
-      }
+      setBooks(data);
+      setPopularBooks(sorted);
+    } catch (error) {
+      console.error(error);
+      setBooks([]);
+      setPopularBooks([]);
+    } finally {
+      setLoading(false);
     }
+  }
 
-    fetchBooks();
-  }, []);
+  fetchBooks();
+}, []);
 
   return (
     <section className="py-16 bg-white dark:bg-gray-900">
@@ -51,15 +52,13 @@ const PopularBooks = () => {
           </p>
         </motion.div>
 
-        {loading ? (
-          <p className="text-center text-gray-600 dark:text-gray-300">
+        {loading ? (         
             <LoadingSpinner />
-          </p>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {popularBooks.map((book, index) => (
               <motion.div
-                key={book.id}
+                key={book._id}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}

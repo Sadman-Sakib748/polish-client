@@ -9,7 +9,7 @@ const PopularBooks = () => {
   const [books, setBooks] = useState([]);
   const [popularBooks, setPopularBooks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const axiosPublic = useAxiosPublic();
+  const axiosPublic = useAxiosPublic();;
 
  useEffect(() => {
   async function fetchBooks() {
@@ -35,7 +35,7 @@ const PopularBooks = () => {
   }
 
   fetchBooks();
-}, []);
+}, [axiosPublic]);
 
   return (
     <section className="py-16 bg-white dark:bg-gray-900">

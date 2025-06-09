@@ -25,6 +25,52 @@ import useAuth from "../../../hooks/useAuth";
 import LoadingSpinner from "../../LoadingSpinner/LoadingSpinner";
 import { useAxiosPublic } from "../../../hooks/useAxiosePublic";
 
+// ✅ Mock data
+const mockBooks = [
+  {
+    title: "The Great Gatsby",
+    category: "Classic",
+    readingStatus: "Read",
+    rating: 4,
+    reviews: [{ text: "Excellent!" }],
+    createdAt: "2025-01-15T00:00:00Z",
+  },
+  {
+    title: "Atomic Habits",
+    category: "Self-Help",
+    readingStatus: "Reading",
+    rating: 5,
+    reviews: [{ text: "Very helpful!" }, { text: "Motivating!" }],
+    createdAt: "2025-02-12T00:00:00Z",
+  },
+  {
+    title: "1984",
+    category: "Dystopian",
+    readingStatus: "Want-to-Read",
+    rating: 0,
+    reviews: [],
+    createdAt: "2025-03-10T00:00:00Z",
+  },
+  {
+    title: "Sapiens",
+    category: "History",
+    readingStatus: "Read",
+    rating: 4.5,
+    reviews: [{ text: "Mind-opening!" }],
+    createdAt: "2025-03-25T00:00:00Z",
+  },
+  {
+    title: "Clean Code",
+    category: "Programming",
+    readingStatus: "Reading",
+    rating: 4,
+    reviews: [{ text: "Essential read" }],
+    createdAt: "2025-05-05T00:00:00Z",
+  },
+];
+
+const useMockData = true; // ✅ Toggle this to use mock or real API
+
 const ProfileDetails = ({ id }) => {
   const { user } = useAuth();
   const [books, setBooks] = useState([]);
@@ -33,39 +79,50 @@ const ProfileDetails = ({ id }) => {
   const axiosPublic = useAxiosPublic();
 
   useEffect(() => {
-    if (!id) return;
+    if (!id && !useMockData) {
+      setError("User ID is required");
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
     setError(null);
 
+    if (useMockData) {
+      setTimeout(() => {
+        setBooks(mockBooks);
+        setLoading(false);
+      }, 500); // simulate API delay
+      return;
+    }
+
     axiosPublic.get(`/booking/${id}`)
       .then((res) => {
-        console.log("Booking data:", res.data);
-        const data = res.data;
-        if (Array.isArray(data)) {
-          setBooks(data);
-        } else {
-          setBooks([]);
-        }
+        const responseData = res.data;
+        const booksData = Array.isArray(responseData)
+          ? responseData
+          : responseData?.data || [];
+
+        console.log("Fetched books:", booksData);
+        setBooks(booksData);
       })
       .catch((err) => {
         console.error("Fetch error:", err);
-        setError(err.message);
+        setError(err.response?.data?.message || err.message || "Failed to fetch books");
       })
       .finally(() => {
         setLoading(false);
       });
-  }, [id]);
+  }, [id, axiosPublic]);
 
   const totalBooks = books.length;
   const booksRead = books.filter((b) => b.readingStatus === "Read").length;
   const booksReading = books.filter((b) => b.readingStatus === "Reading").length;
   const booksWantToRead = books.filter((b) => b.readingStatus === "Want-to-Read").length;
-  const totalReviews = 0;
-  const averageRating =
-    books.length === 0
-      ? 0
-      : (books.reduce((sum, b) => sum + (b.rating || 0), 0) / books.length).toFixed(1);
+  const totalReviews = books.reduce((sum, book) => sum + (book.reviews?.length || 0), 0);
+  const averageRating = books.length > 0
+    ? (books.reduce((sum, b) => sum + (b.rating || 0), 0) / books.length).toFixed(1)
+    : 0;
 
   const categoryCountMap = books.reduce((acc, book) => {
     if (book.category) {
@@ -82,33 +139,32 @@ const ProfileDetails = ({ id }) => {
   const monthlyData = Array.from({ length: 12 }, (_, i) => {
     const month = new Date(0, i).toLocaleString("default", { month: "short" });
     const booksInMonth = books.filter((b) => {
-      const createdAt = new Date(b.createdAt);
-      return createdAt.getMonth() === i;
+      try {
+        const createdAt = new Date(b.createdAt);
+        return createdAt.getMonth() === i;
+      } catch {
+        return false;
+      }
     }).length;
 
     return { month, books: booksInMonth };
   });
 
-  if (loading)
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <LoadingSpinner />
       </div>
     );
+  }
 
-  if (error)
+  if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center text-red-600 bg-gray-50 dark:bg-gray-900">
         Error: {error}
       </div>
     );
-
-  if (!loading && books.length === 0)
-    return (
-      <div className="min-h-screen flex items-center justify-center text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-900">
-        No books found for this user.
-      </div>
-    );
+  }
 
   return (
     <div className="min-h-screen pt-16 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
@@ -118,14 +174,12 @@ const ProfileDetails = ({ id }) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          {/* Profile Header */}
           <div className="mb-8 rounded-lg bg-white dark:bg-gray-800 shadow-md">
             <div className="p-8 flex flex-col md:flex-row items-center gap-6">
-              {/* Avatar */}
               <div className="relative rounded-full h-24 w-24 overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-400">
                 {user?.photoURL ? (
                   <img
-                    src={user?.photoURL}
+                    src={user.photoURL}
                     alt="Profile"
                     className="h-full w-full object-cover"
                   />
@@ -134,13 +188,14 @@ const ProfileDetails = ({ id }) => {
                 )}
               </div>
 
-              {/* User Info */}
               <div className="flex-1 text-center md:text-left">
-                <h1 className="text-3xl font-bold mb-2">{user?.displayName}</h1>
+                <h1 className="text-3xl font-bold mb-2">{user?.displayName || "User"}</h1>
                 <p className="text-gray-600 dark:text-gray-300 mb-2">{user?.email}</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                  Member since {user?.metadata?.creationTime}
-                </p>
+                {user?.metadata?.creationTime && (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                    Member since {new Date(user.metadata.creationTime).toLocaleDateString()}
+                  </p>
+                )}
 
                 <div className="flex flex-wrap gap-4 justify-center md:justify-start">
                   <StatBox value={totalBooks} label="Total Books" color="blue" />
@@ -160,46 +215,56 @@ const ProfileDetails = ({ id }) => {
             </div>
           </div>
 
-          {/* Stats and Charts */}
           <div className="grid gap-8 lg:grid-cols-2">
             <Card title="Reading Status" icon={<BookOpen className="h-5 w-5" />}>
-              <StatusRow label="Completed Books" count={booksRead} color="green" />
-              <StatusRow label="Currently Reading" count={booksReading} color="blue" />
-              <StatusRow label="Want to Read" count={booksWantToRead} color="orange" />
+              <div className="space-y-4">
+                <StatusRow label="Completed Books" count={booksRead} color="green" />
+                <StatusRow label="Currently Reading" count={booksReading} color="blue" />
+                <StatusRow label="Want to Read" count={booksWantToRead} color="orange" />
+              </div>
             </Card>
 
             <Card title="Books by Category">
               <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={categoryData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={100}
-                      paddingAngle={5}
-                      dataKey="value"
-                    >
-                      {categoryData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="flex justify-center gap-4 mt-4">
-                {categoryData.map((cat) => (
-                  <div key={cat.name} className="flex items-center gap-2">
-                    <div
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: cat.color }}
-                    />
-                    <span className="text-sm">{cat.name}</span>
+                {categoryData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={categoryData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={100}
+                        paddingAngle={5}
+                        dataKey="value"
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      >
+                        {categoryData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex items-center justify-center text-gray-500">
+                    No category data available
                   </div>
-                ))}
+                )}
               </div>
+              {categoryData.length > 0 && (
+                <div className="flex flex-wrap justify-center gap-4 mt-4">
+                  {categoryData.map((cat) => (
+                    <div key={cat.name} className="flex items-center gap-2">
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: cat.color }}
+                      />
+                      <span className="text-sm">{cat.name} ({cat.value})</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </Card>
 
             <div className="lg:col-span-2">
@@ -212,7 +277,12 @@ const ProfileDetails = ({ id }) => {
                       <YAxis stroke="#9CA3AF" />
                       <Tooltip />
                       <Legend />
-                      <Bar dataKey="books" fill="#3B82F6" name="Books Read" />
+                      <Bar
+                        dataKey="books"
+                        fill="#3B82F6"
+                        name="Books Added"
+                        radius={[4, 4, 0, 0]}
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -262,14 +332,14 @@ const StatusRow = ({ label, count, color }) => {
 };
 
 const Card = ({ title, children, icon }) => (
-  <div className="rounded-lg bg-white dark:bg-gray-800 shadow-md">
+  <div className="rounded-lg bg-white dark:bg-gray-800 shadow-md overflow-hidden">
     <div className="border-b border-gray-200 dark:border-gray-700 px-6 py-4">
       <h2 className="flex items-center gap-2 text-lg font-semibold">
         {icon && icon}
         {title}
       </h2>
     </div>
-    <div className="p-6 space-y-4">{children}</div>
+    <div className="p-6">{children}</div>
   </div>
 );
 

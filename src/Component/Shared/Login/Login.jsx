@@ -2,10 +2,17 @@ import { useForm } from "react-hook-form";
 import Lottie from "lottie-react";
 import loginAnimation from "../../../assets/login.json";
 import useAuth from "../../../hooks/useAuth";
+import { useNavigate } from "react-router";
+import { useState } from "react";
+import GoogleSignInButton from "../../Pages/GoogleSignInButton/GoogleSignInButton";
+import toast from "react-hot-toast";
 
 const Login = () => {
-  const { signIn } = useAuth();
+  const { signIn,googleSignIn,updateUserProfile } = useAuth();
   const { register, handleSubmit, formState: { errors }, reset } = useForm();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const onSubmit = (data) => {
     const { email, password } = data;
@@ -14,9 +21,30 @@ const Login = () => {
       .then(res => {
         console.log("User logged in:", res.user);
         reset(); // Reset the form
+        navigate('/')
       })
       .catch(error => {
         console.error("Login failed:", error.message);
+      });
+  };
+  const handleGoogleSignIn = () => {
+    setError("");
+    setLoading(true);
+    googleSignIn()
+      .then((result) => {
+        const user = result.user;
+        return updateUserProfile(user?.displayName, user?.photoURL);
+      })
+      .then(() => {
+        toast.success("Signed in and profile updated with Google!");
+        navigate('/')
+      })
+      .catch(err => {
+        setError(err.message);
+        console.error("Google Sign-In Error:", err);
+      })
+      .finally(() => {
+        setLoading(false);
       });
   };
 
@@ -69,7 +97,10 @@ const Login = () => {
           Don't have an account?{" "}
           <a href="/register" className="text-blue-500 underline">Register</a>
         </p>
+        {/* Google Sign In Button */}
+        <GoogleSignInButton handleGoogleSignIn={handleGoogleSignIn} loading={loading} error={error} />
       </div>
+
     </div>
   );
 };

@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
-import { Link } from "react-router"; // ✅ Corrected
+import { useState, useEffect } from "react";
+import { Link } from "react-router"; // ✅ Corrected from "react-router"
 import { motion } from "framer-motion";
 import LoadingSpinner from "../../LoadingSpinner/LoadingSpinner";
-import axios from "axios";
 import { useAxiosPublic } from "../../../hooks/useAxiosePublic";
+import useAuth from "../../../hooks/useAuth";
 
 const statusColors = {
   Read: "bg-green-500",
@@ -19,16 +19,14 @@ const Bookshelf = () => {
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const booksPerPage = 8;
-  const axiousPublic = useAxiosPublic();
-
-  const [votedBooks, setVotedBooks] = useState(new Set());
-  const [upvotingBookId, setUpvotingBookId] = useState(null);
+  const axiosPublic = useAxiosPublic();
+  const { user } = useAuth();
 
   useEffect(() => {
     async function fetchBooks() {
       setLoading(true);
       try {
-        const res = await axiousPublic.get("/books");
+        const res = await axiosPublic.get("/books");
         setBooks(res.data);
       } catch (err) {
         console.error("Failed to fetch books:", err);
@@ -37,32 +35,8 @@ const Bookshelf = () => {
       }
     }
     fetchBooks();
-  }, []);
+  }, [axiosPublic]);
 
-  const handleUpvote = async (bookId) => {
-    if (votedBooks.has(bookId) || upvotingBookId === bookId) return;
-    setUpvotingBookId(bookId);
-
-    try {
-      const response = await axiousPublic.post(`/books/${bookId}/upvote`);
-
-      // axios automatically throws for non-2xx status, so no need to check response.ok
-
-      const updatedBook = response.data;
-
-      setBooks((prevBooks) =>
-        prevBooks.map((book) =>
-          book._id === updatedBook._id ? updatedBook : book
-        )
-      );
-
-      setVotedBooks((prev) => new Set(prev).add(bookId));
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setUpvotingBookId(null);
-    }
-  };
   const filteredBooks = books.filter((book) => {
     const title = book?.title || "";
     const author = book?.author || "";
@@ -145,50 +119,74 @@ const Bookshelf = () => {
           {filteredBooks.length > 0 ? (
             <>
               <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {currentBooks.map((book) => (
-                  <motion.div
-                    key={book._id}
-                    className="bg-white dark:bg-gray-800 p-4 rounded shadow"
-                    whileHover={{ scale: 1.02 }}
-                  >
-                    <img
-                      src={book.coverPhoto}
-                      alt={book.title}
-                      className="h-48 w-full object-cover rounded mb-2"
-                    />
-                    <h2 className="text-lg font-semibold">{book.title}</h2>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {book.author}
-                    </p>
-                    <p className="text-sm mt-1 line-clamp-3">
-                      {book.description}
-                    </p>
-                    <div className="flex justify-between items-center mt-3">
-                      <button
-                        onClick={() => handleUpvote(book._id)}
-                        disabled={votedBooks.has(book._id)}
-                        className={`text-sm px-2 py-1 rounded ${votedBooks.has(book._id)
-                            ? "bg-gray-300 dark:bg-gray-700 cursor-not-allowed"
-                            : "bg-blue-500 text-white hover:bg-blue-600"
-                          }`}
-                      >
-                        👍 {book.upvotes}
-                      </button>
-                      <Link
-                        to={`/books/${book._id}`}
-                        className="text-blue-600 text-sm hover:underline"
-                      >
-                        Details
-                      </Link>
-                    </div>
-                    <span
-                      className={`mt-2 inline-block px-2 py-1 text-xs font-medium rounded ${statusColors[book.status]
-                        } text-white`}
+                {currentBooks.map((book) => {
+                  const isLiked = book.likedBy?.includes(user?.email);
+                  const likeCount = book.likedBy?.length || 0;
+
+                  const handleLike = () => {
+                    if (user?.email === book.email) return alert("Lojja korena?");
+                    axiosPublic
+                      .patch(`/like/${book._id}`, { email: user?.email })
+                      .then((res) => {
+                        const updatedBooks = books.map((b) =>
+                          b._id === book._id
+                            ? {
+                                ...b,
+                                likedBy: res.data.liked
+                                  ? [...(b.likedBy || []), user?.email]
+                                  : (b.likedBy || []).filter((e) => e !== user?.email),
+                              }
+                            : b
+                        );
+                        setBooks(updatedBooks);
+                      })
+                      .catch((err) => console.error(err));
+                  };
+
+                  return (
+                    <motion.div
+                      key={book._id}
+                      className="bg-white dark:bg-gray-800 p-4 rounded shadow"
+                      whileHover={{ scale: 1.02 }}
                     >
-                      {book.status}
-                    </span>
-                  </motion.div>
-                ))}
+                      <img
+                        src={book.coverPhoto}
+                        alt={book.title}
+                        className="h-48 w-full object-cover rounded mb-2"
+                      />
+                      <h2 className="text-lg font-semibold">{book.title}</h2>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {book.author}
+                      </p>
+                      <p className="text-sm mt-1 line-clamp-3">
+                        {book.description}
+                      </p>
+                      <div className="flex justify-between items-center mt-3">
+                        <button
+                          onClick={handleLike}
+                          className={`text-sm px-2 py-1 rounded ${isLiked
+                            ? "bg-red-500 text-white"
+                            : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200"
+                            }`}
+                        >
+                          ❤️ {likeCount}
+                        </button>
+                        <Link
+                          to={`/books/${book._id}`}
+                          className="text-blue-600 text-sm hover:underline"
+                        >
+                          Details
+                        </Link>
+                      </div>
+                      <span
+                        className={`mt-2 inline-block px-2 py-1 text-xs font-medium rounded ${statusColors[book.status]
+                          } text-white`}
+                      >
+                        {book.status}
+                      </span>
+                    </motion.div>
+                  );
+                })}
               </div>
 
               {/* Pagination */}
@@ -211,7 +209,7 @@ const Bookshelf = () => {
             </>
           ) : (
             <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-              No books found matching your criteria.
+              <LoadingSpinner />
             </div>
           )}
         </>

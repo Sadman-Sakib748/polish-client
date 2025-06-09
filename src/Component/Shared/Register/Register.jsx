@@ -4,12 +4,15 @@ import Lottie from "lottie-react";
 import animationData from "../../../assets/register.json";
 import useAuth from "../../../hooks/useAuth";
 import GoogleSignInButton from "../../Pages/GoogleSignInButton/GoogleSignInButton";
+import { useNavigate } from "react-router";
+import toast from "react-hot-toast";
 
 const Register = () => {
   const { register, handleSubmit, formState: { errors }, reset } = useForm();
   const { createUser, updateUserProfile, googleSignIn } = useAuth();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const onSubmit = (data) => {
     setError("");
@@ -19,7 +22,8 @@ const Register = () => {
       .then(() => updateUserProfile(name, image))
       .then(() => {
         reset();
-        alert("User created and profile updated.");
+        toast.success("User created and profile updated.");
+        navigate('/')
       })
       .catch(err => {
         setError(err.message);
@@ -37,7 +41,8 @@ const Register = () => {
         return updateUserProfile(user?.displayName, user?.photoURL);
       })
       .then(() => {
-        alert("Signed in and profile updated with Google!");
+        toast.success("Signed in and profile updated with Google!");
+        navigate('/')
       })
       .catch(err => {
         setError(err.message);

@@ -69,7 +69,7 @@ const BookCard = ({ book, onDelete, index,userEmail }) => {
                 {book.totalPages && (
                     <p className="text-sm text-gray-500 mt-1">📖 {book.totalPages} pages</p>
                 )}
-                {book.upvotes !== undefined && <p className="text-sm text-gray-500">👍 {book.upvotes}</p>}
+                {book.likedBy !== undefined && <p className="text-sm text-gray-500">👍 {book.likedBy}</p>}
                 {book.createdAt && (
                     <p className="text-xs text-gray-400 mt-2">
                         Added on {new Date(book.createdAt).toLocaleDateString()}

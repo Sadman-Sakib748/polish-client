@@ -1,97 +1,103 @@
+// 👇 Import Heart
 import { useParams } from "react-router";
 import useAuth from "../../../hooks/useAuth";
 import { useEffect, useState } from "react";
 import { Star, Heart, MessageCircle } from "lucide-react";
 import { motion } from "framer-motion";
-import { useAxiosPublic } from "../../../hooks/useAxiosePublic";
 import ReviewSection from "../ReviewSection/ReviewSection";
 import LoadingSpinner from "../../LoadingSpinner/LoadingSpinner";
 import toast from "react-hot-toast";
+import { useAxiosPublic } from "../../../hooks/useAxiosePublic";
 
 const MyBooks = () => {
   const { id } = useParams();
   const { user } = useAuth();
   const [currentBook, setCurrentBook] = useState(null);
   const [votedBooks, setVotedBooks] = useState(new Set());
+  const [likedBooks, setLikedBooks] = useState(new Set());
   const [newReview, setNewReview] = useState("");
   const [bookReviews, setBookReviews] = useState([]);
-  const axiosPublic = useAxiosPublic();
+  const axiusePublic = useAxiosPublic();
 
   const currentUser = user || {
     displayName: "Anonymous",
     email: "unknown@example.com",
   };
 
-  // Fetch book details and reviews
   useEffect(() => {
     if (!id) return;
 
     const fetchBook = async () => {
       try {
-        const response = await axiosPublic.get(`/books/${id}`);
+        const response = await axiusePublic.get(`/books/${id}`);
         setCurrentBook(response.data);
+
+        // Auto-mark as liked if user has liked it
+        if (response.data.likedBy?.includes(currentUser.email)) {
+          setLikedBooks((prev) => new Set(prev).add(id));
+        }
       } catch (error) {
-        console.error("Failed to fetch book:", error);
         toast.error("Failed to load book details.");
       }
     };
 
     const fetchReviews = async () => {
       try {
-        const response = await axiosPublic.get(`/reviews/${id}`);
+        const response = await axiusePublic.get(`/reviews/${id}`);
         setBookReviews(response.data);
       } catch (error) {
-        console.error("Failed to fetch reviews:", error);
         toast.error("Failed to load reviews.");
       }
     };
 
     fetchBook();
     fetchReviews();
-  }, [id, axiosPublic]);
+  }, [id, axiusePublic, currentUser.email]);
 
-  // Load voted books from localStorage on mount
   useEffect(() => {
     const storedVotes = JSON.parse(localStorage.getItem("votedBooks") || "[]");
     setVotedBooks(new Set(storedVotes));
+
+    const storedLikes = JSON.parse(localStorage.getItem("likedBooks") || "[]");
+    setLikedBooks(new Set(storedLikes));
   }, []);
 
-  // Persist voted books to localStorage when updated
   useEffect(() => {
     localStorage.setItem("votedBooks", JSON.stringify(Array.from(votedBooks)));
   }, [votedBooks]);
 
-  // Upvote handler
-  const handleUpvote = async (bookId) => {
-    if (votedBooks.has(bookId)) return;
+  useEffect(() => {
+    localStorage.setItem("likedBooks", JSON.stringify(Array.from(likedBooks)));
+  }, [likedBooks]);
 
-    setVotedBooks((prev) => new Set(prev).add(bookId));
-    setCurrentBook((prev) => ({
-      ...prev,
-      upvotes: (prev?.upvotes || 0) + 1,
-    }));
 
+  const handleLike = async (bookId) => {
     try {
-      const response = await axiosPublic.patch(`/books/upvote/${bookId}`);
-      setCurrentBook(response.data);
-    } catch (error) {
-      console.error("Upvote error:", error.message);
-      toast.error("Failed to upvote.");
-
-      // Rollback on error
-      setVotedBooks((prev) => {
-        const copy = new Set(prev);
-        copy.delete(bookId);
-        return copy;
+      const response = await axiusePublic.patch(`/like/${bookId}`, {
+        email: currentUser.email,
       });
+
+      const liked = response.data?.liked;
+
       setCurrentBook((prev) => ({
         ...prev,
-        upvotes: (prev?.upvotes || 1) - 1,
+        likedBy: liked
+          ? [...(prev.likedBy || []), currentUser?.email]
+          : (prev.likedBy || []).filter((e) => e !== currentUser?.email),
       }));
+
+      setLikedBooks((prev) => {
+        const newSet = new Set(prev);
+        liked ? newSet.add(bookId) : newSet.delete(bookId);
+        return newSet;
+      });
+
+      toast.success(liked ? "Liked the book!" : "Unliked the book!");
+    } catch (error) {
+      toast.error("Failed to like the book.");
     }
   };
 
-  // Submit a new review
   const handleSubmitReview = async () => {
     if (!newReview.trim()) {
       toast.error("Review cannot be empty.");
@@ -109,9 +115,7 @@ const MyBooks = () => {
         rating: 5,
       };
 
-      const response = await axiosPublic.post(`/reviews/${id}`, reviewData, {
-        headers: { "Content-Type": "application/json" },
-      });
+      const response = await axiusePublic.post(`/reviews/${id}`, reviewData);
 
       const insertedId = response.data?.reviewId;
 
@@ -129,19 +133,16 @@ const MyBooks = () => {
         toast.error("Something went wrong. Review not saved.");
       }
     } catch (error) {
-      console.error("Failed to submit review:", error);
       toast.error(error.response?.data?.error || "Failed to post review.");
     }
   };
 
-  // Delete a review
   const handleDeleteReview = async (reviewId) => {
     try {
-      await axiosPublic.delete(`/reviews/${reviewId}`);
+      await axiusePublic.delete(`/reviews/${reviewId}`);
       setBookReviews((prev) => prev.filter((review) => review._id !== reviewId));
       toast.success("Review deleted.");
     } catch (error) {
-      console.error("Failed to delete review:", error);
       toast.error("Failed to delete review.");
     }
   };
@@ -160,7 +161,7 @@ const MyBooks = () => {
               readingStatus,
               overview,
               rating,
-              upvotes,
+              likedBy = [],
               userEmail,
               userName,
               _id,
@@ -186,41 +187,34 @@ const MyBooks = () => {
                         {category || "No Category"}
                       </span>
                       <span
-                        className={`text-white px-2 py-1 rounded text-sm ${
-                          readingStatus === "Read"
+                        className={`text-white px-2 py-1 rounded text-sm ${readingStatus === "Read"
                             ? "bg-green-500"
                             : readingStatus === "Reading"
-                            ? "bg-blue-500"
-                            : "bg-orange-500"
-                        }`}
+                              ? "bg-blue-500"
+                              : "bg-orange-500"
+                          }`}
                       >
                         {readingStatus || "Unknown"}
                       </span>
                     </div>
                     <div className="flex items-center justify-center gap-4 mb-4">
+                      {/* Star */}
                       <div className="flex items-center gap-1 text-yellow-500">
                         <Star className="w-5 h-5 fill-yellow-400" />
                         <span>{rating?.toFixed(1) || "N/A"}</span>
                       </div>
+                      {/* Like Button */}
                       <button
-                        onClick={() => handleUpvote(_id)}
-                        disabled={votedBooks.has(_id)}
-                        className={`flex items-center gap-1 text-sm px-2 py-1 rounded border ${
-                          votedBooks.has(_id)
-                            ? "bg-red-100 border-red-300"
-                            : "bg-white border-gray-300"
-                        }`}
-                      >
-                        <Heart
-                          className={`w-4 h-4 transition-all duration-200 ease-in-out ${
-                            votedBooks.has(_id)
-                              ? "fill-red-500 text-red-500 scale-110"
-                              : "text-gray-500 hover:scale-110"
+                        onClick={() => handleLike(_id)}
+                        className={`text-sm px-2 py-1 rounded border ${likedBooks.has(_id)
+                            ? "bg-pink-100 border-pink-300 text-pink-600"
+                            : "bg-white border-gray-300 text-gray-500"
                           }`}
-                        />
-                        {upvotes || 0}
+                      >
+                        ❤️ {likedBy.length || 0}
                       </button>
                     </div>
+
                     <p className="text-sm text-gray-600">
                       <strong>Added by:</strong> {userName || "Unknown"}
                     </p>
@@ -233,14 +227,13 @@ const MyBooks = () => {
                   </div>
                 </motion.div>
 
-                {/* Details & Reviews */}
+                {/* Right column: Details & Reviews */}
                 <motion.div
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.6 }}
                   className="lg:col-span-2 space-y-6"
                 >
-                  {/* Details */}
                   <div className="bg-white rounded-lg shadow p-6">
                     <h2 className="text-2xl font-bold mb-2">{title || "Untitled"}</h2>
                     <p className="text-lg text-gray-600 mb-4">by {author || "Unknown"}</p>
@@ -248,7 +241,6 @@ const MyBooks = () => {
                     <p className="text-gray-700">{overview || "No overview available."}</p>
                   </div>
 
-                  {/* Review Form */}
                   <div className="bg-white rounded-lg shadow p-6">
                     <div className="flex items-center gap-2 mb-4">
                       <MessageCircle className="w-5 h-5 text-gray-600" />
@@ -270,7 +262,6 @@ const MyBooks = () => {
                     </button>
                   </div>
 
-                  {/* Reviews Section */}
                   <ReviewSection
                     currentUser={currentUser}
                     bookReviews={bookReviews}

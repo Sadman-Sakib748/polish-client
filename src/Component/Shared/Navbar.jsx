@@ -4,6 +4,7 @@ import { Menu, X, Sun, Moon, LogOut } from 'lucide-react';
 import { Link, useNavigation } from 'react-router';  // FIXED import
 import useAuth from '../../hooks/useAuth';
 import LoadingSpinner from '../LoadingSpinner/LoadingSpinner';
+import toast from 'react-hot-toast';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -12,12 +13,14 @@ const Navbar = () => {
   const navigation = useNavigation();
 
   const navLinks = [
-    { name: 'Home', href: '/' },
-    { name: 'Bookshelf', href: '/Bookshelf' },
+  { name: 'Home', href: '/' },
+  { name: 'Bookshelf', href: '/Bookshelf' },
+  ...(user ? [
     { name: 'Add Book', href: '/AddBook' },
     { name: 'My Books', href: `/myGroup/${user?.email}` },
     { name: 'Profile', href: '/profile' },
-  ];
+  ] : [])
+];
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
@@ -37,7 +40,10 @@ const Navbar = () => {
 
   const handleLogout = () => {
     logOut()
-      .then(() => console.log("User logged out"))
+      .then(() => {
+        toast.success('User logged out')
+        console.log("User logged out")
+      })
       .catch(err => console.error("Logout error:", err.message));
   };
 

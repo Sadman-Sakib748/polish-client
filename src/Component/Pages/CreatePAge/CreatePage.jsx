@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import useAuth from "../../../hooks/useAuth";
-import { useAxiosPublic } from "../../../hooks/useAxiosePublic";
 import DeleteModal from "../DeleteModal/DeleteModal";
 import BookCard from "../Modal/BookCard";
 import Filters from "../Modal/Filters";
@@ -8,6 +7,7 @@ import Stats from "../Modal/Stats";
 import Header from "../Modal/Header";
 import LoadingSpinner from "../../LoadingSpinner/LoadingSpinner";
 import CreateBookForm from "../Modal/CreateBookForm";
+import { useAxiosPublic } from "../../../hooks/useAxiosePublic";
 
 const CreatePage = () => {
   const { user } = useAuth();
@@ -17,22 +17,22 @@ const CreatePage = () => {
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
+
   const [bookToDelete, setBookToDelete] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [editBook, setEditBook] = useState(null); // For editing a book
+  const [editBook, setEditBook] = useState(null);
 
-  // Fetch user books on mount or when userEmail changes
   useEffect(() => {
     if (!userEmail) return;
-
     setLoading(true);
+    setError(null);
+
     axiosPublic
-      .get(`/booking/${userEmail}`,{
-        withCredentials: true,
-      })
+      .get(`/booking/${userEmail}`)
       .then((res) => {
         setBooks(res.data);
         setLoading(false);
@@ -44,7 +44,6 @@ const CreatePage = () => {
       });
   }, [userEmail, axiosPublic]);
 
-  // Delete book handler
   const handleDeleteBook = async (bookId) => {
     try {
       await axiosPublic.delete(`/books/${bookId}`);
@@ -56,36 +55,51 @@ const CreatePage = () => {
     }
   };
 
-  // Create or update book handler
-  const handleCreateOrUpdateBook = async (bookData) => {
+  const createBook = async (bookData) => {
     try {
-      if (editBook) {
-        // Update existing book
-        const res = await axiosPublic.put(`/books/${editBook._id}`, bookData);
-        setBooks((prev) =>
-          prev.map((b) => (b._id === editBook._id ? res.data : b))
-        );
-      } else {
-        // Create new book
-        const res = await axiosPublic.post("/books", bookData);
-        setBooks((prev) => [...prev, res.data]);
-      }
-      // Close form and reset editBook state after success
+      const res = await axiosPublic.post("/books", bookData);
+      setBooks((prev) => [...prev, res.data]);
       setShowCreateForm(false);
       setEditBook(null);
     } catch (err) {
-      console.error("Failed to create/update book:", err);
-      alert("Failed to save book. Try again.");
+      console.error("Failed to create book:", err);
+      alert("Failed to create book. Try again.");
     }
   };
 
-  // Filtering logic
+  const updateBook = async (bookData) => {
+    try {
+      if (!editBook) return;
+      const res = await axiosPublic.put(`/edits/${editBook._id}`, bookData);
+      setBooks((prev) => prev.map((b) => (b._id === editBook._id ? res.data : b)));
+      setShowCreateForm(false);
+      setEditBook(null);
+    } catch (err) {
+      console.error("Failed to update book:", err);
+      alert("Failed to update book. Try again.");
+    }
+  };
+
+  const handleCreateOrUpdateBook = (bookData) => {
+    if (editBook) {
+      updateBook(bookData);
+    } else {
+      createBook(bookData);
+    }
+  };
+
+  const handleCancel = () => {
+    setShowCreateForm(false);
+    setEditBook(null);
+  };
+
   const filteredBooks = books.filter((book) => {
     const matchesSearch =
       book.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       book.author?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesCategory = selectedCategory === "all" || book.category === selectedCategory;
+
     const statusValue = book.status || book.readingStatus || "";
     const matchesStatus = selectedStatus === "all" || statusValue === selectedStatus;
 
@@ -93,7 +107,7 @@ const CreatePage = () => {
   });
 
   const getStatusCount = (status) =>
-    books.filter((book) => (book.status === status || book.readingStatus === status)).length;
+    books.filter((book) => book.status === status || book.readingStatus === status).length;
 
   if (loading) return <LoadingSpinner />;
   if (error) return <p className="text-center text-red-600">{error}</p>;
@@ -106,7 +120,7 @@ const CreatePage = () => {
         <button
           onClick={() => {
             setShowCreateForm((v) => !v);
-            setEditBook(null); // Reset edit mode on toggling
+            setEditBook(null);
           }}
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
         >
@@ -116,14 +130,11 @@ const CreatePage = () => {
 
       {showCreateForm && (
         <CreateBookForm
-          defaultValues={editBook || {}}
           onSubmit={handleCreateOrUpdateBook}
-          onCancel={() => {
-            setShowCreateForm(false);
-            setEditBook(null);
-          }}
-          displayName={user?.displayName || ""}
-          email={user?.email || ""}
+          onCancel={handleCancel}
+          displayName={user.displayName}
+          email={user?.email}
+          defaultValues={editBook || {}}
         />
       )}
 
@@ -150,6 +161,7 @@ const CreatePage = () => {
           <h2 className="text-2xl font-bold mb-6">
             {filteredBooks.length} Book{filteredBooks.length !== 1 && "s"} Found
           </h2>
+
           {filteredBooks.length > 0 ? (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {filteredBooks.map((book, i) => (

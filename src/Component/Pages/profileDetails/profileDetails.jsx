@@ -25,53 +25,7 @@ import useAuth from "../../../hooks/useAuth";
 import LoadingSpinner from "../../LoadingSpinner/LoadingSpinner";
 import { useAxiosPublic } from "../../../hooks/useAxiosePublic";
 
-// ✅ Mock data
-const mockBooks = [
-  {
-    title: "The Great Gatsby",
-    category: "Classic",
-    readingStatus: "Read",
-    rating: 4,
-    reviews: [{ text: "Excellent!" }],
-    createdAt: "2025-01-15T00:00:00Z",
-  },
-  {
-    title: "Atomic Habits",
-    category: "Self-Help",
-    readingStatus: "Reading",
-    rating: 5,
-    reviews: [{ text: "Very helpful!" }, { text: "Motivating!" }],
-    createdAt: "2025-02-12T00:00:00Z",
-  },
-  {
-    title: "1984",
-    category: "Dystopian",
-    readingStatus: "Want-to-Read",
-    rating: 0,
-    reviews: [],
-    createdAt: "2025-03-10T00:00:00Z",
-  },
-  {
-    title: "Sapiens",
-    category: "History",
-    readingStatus: "Read",
-    rating: 4.5,
-    reviews: [{ text: "Mind-opening!" }],
-    createdAt: "2025-03-25T00:00:00Z",
-  },
-  {
-    title: "Clean Code",
-    category: "Programming",
-    readingStatus: "Reading",
-    rating: 4,
-    reviews: [{ text: "Essential read" }],
-    createdAt: "2025-05-05T00:00:00Z",
-  },
-];
-
-const useMockData = true; // ✅ Toggle this to use mock or real API
-
-const ProfileDetails = ({ id }) => {
+const ProfileDetails = () => {
   const { user } = useAuth();
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -79,74 +33,51 @@ const ProfileDetails = ({ id }) => {
   const axiosPublic = useAxiosPublic();
 
   useEffect(() => {
-    if (!id && !useMockData) {
-      setError("User ID is required");
-      setLoading(false);
-      return;
-    }
+    if (!user?.email) return;
 
     setLoading(true);
     setError(null);
 
-    if (useMockData) {
-      setTimeout(() => {
-        setBooks(mockBooks);
-        setLoading(false);
-      }, 500); // simulate API delay
-      return;
-    }
-
-    axiosPublic.get(`/booking/${id}`)
+    axiosPublic
+      .get(`/books?email=${user.email}`)
       .then((res) => {
-        const responseData = res.data;
-        const booksData = Array.isArray(responseData)
-          ? responseData
-          : responseData?.data || [];
-
-        console.log("Fetched books:", booksData);
-        setBooks(booksData);
+        const validBooks = res.data.map((b) => ({
+          ...b,
+          rating: b.rating >= 1 && b.rating <= 5 ? b.rating : 0,
+        }));
+        setBooks(validBooks);
       })
       .catch((err) => {
-        console.error("Fetch error:", err);
-        setError(err.response?.data?.message || err.message || "Failed to fetch books");
+        console.error(err);
+        setError("Failed to fetch books");
       })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, [id, axiosPublic]);
+      .finally(() => setLoading(false));
+  }, [user, axiosPublic]);
 
   const totalBooks = books.length;
   const booksRead = books.filter((b) => b.readingStatus === "Read").length;
   const booksReading = books.filter((b) => b.readingStatus === "Reading").length;
   const booksWantToRead = books.filter((b) => b.readingStatus === "Want-to-Read").length;
-  const totalReviews = books.reduce((sum, book) => sum + (book.reviews?.length || 0), 0);
-  const averageRating = books.length > 0
-    ? (books.reduce((sum, b) => sum + (b.rating || 0), 0) / books.length).toFixed(1)
+  const totalReviews = books.reduce((sum, b) => sum + (b.reviews?.length || 0), 0);
+  const averageRating = totalBooks > 0
+    ? (
+        books.reduce((sum, b) => sum + (b.rating || 0), 0) / totalBooks
+      ).toFixed(1)
     : 0;
 
-  const categoryCountMap = books.reduce((acc, book) => {
-    if (book.category) {
-      acc[book.category] = (acc[book.category] || 0) + 1;
-    }
+  const categoryMap = books.reduce((acc, b) => {
+    acc[b.category] = (acc[b.category] || 0) + 1;
     return acc;
   }, {});
 
-  const categoryData = Object.entries(categoryCountMap).map(([name, value], i) => {
+  const categoryData = Object.entries(categoryMap).map(([name, value], i) => {
     const colors = ["#3B82F6", "#10B981", "#8B5CF6", "#F59E0B", "#EF4444"];
     return { name, value, color: colors[i % colors.length] };
   });
 
   const monthlyData = Array.from({ length: 12 }, (_, i) => {
     const month = new Date(0, i).toLocaleString("default", { month: "short" });
-    const booksInMonth = books.filter((b) => {
-      try {
-        const createdAt = new Date(b.createdAt);
-        return createdAt.getMonth() === i;
-      } catch {
-        return false;
-      }
-    }).length;
-
+    const booksInMonth = books.filter((b) => new Date(b.createdAt).getMonth() === i).length;
     return { month, books: booksInMonth };
   });
 
@@ -161,7 +92,7 @@ const ProfileDetails = ({ id }) => {
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center text-red-600 bg-gray-50 dark:bg-gray-900">
-        Error: {error}
+        {error}
       </div>
     );
   }
@@ -169,23 +100,14 @@ const ProfileDetails = ({ id }) => {
   return (
     <div className="min-h-screen pt-16 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       <div className="container mx-auto px-4 py-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+          {/* Profile Info */}
           <div className="mb-8 rounded-lg bg-white dark:bg-gray-800 shadow-md">
             <div className="p-8 flex flex-col md:flex-row items-center gap-6">
               <div className="relative rounded-full h-24 w-24 overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-400">
                 {user?.photoURL ? (
-                  <img
-                    src={user.photoURL}
-                    alt="Profile"
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <User className="h-12 w-12" />
-                )}
+                  <img src={user.photoURL} alt="Profile" className="h-full w-full object-cover" />
+                ) : <User className="h-12 w-12" />}
               </div>
 
               <div className="flex-1 text-center md:text-left">
@@ -196,7 +118,6 @@ const ProfileDetails = ({ id }) => {
                     Member since {new Date(user.metadata.creationTime).toLocaleDateString()}
                   </p>
                 )}
-
                 <div className="flex flex-wrap gap-4 justify-center md:justify-start">
                   <StatBox value={totalBooks} label="Total Books" color="blue" />
                   <StatBox value={booksRead} label="Books Read" color="green" />
@@ -205,16 +126,14 @@ const ProfileDetails = ({ id }) => {
                 </div>
               </div>
 
-              <button
-                type="button"
-                className="flex items-center gap-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
+              <button className="flex items-center gap-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <Edit className="h-4 w-4" />
                 Edit Profile
               </button>
             </div>
           </div>
 
+          {/* Stats */}
           <div className="grid gap-8 lg:grid-cols-2">
             <Card title="Reading Status" icon={<BookOpen className="h-5 w-5" />}>
               <div className="space-y-4">
@@ -229,16 +148,7 @@ const ProfileDetails = ({ id }) => {
                 {categoryData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie
-                        data={categoryData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={100}
-                        paddingAngle={5}
-                        dataKey="value"
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      >
+                      <Pie data={categoryData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={5} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
                         {categoryData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
@@ -247,19 +157,14 @@ const ProfileDetails = ({ id }) => {
                     </PieChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="h-full flex items-center justify-center text-gray-500">
-                    No category data available
-                  </div>
+                  <div className="h-full flex items-center justify-center text-gray-500">No category data available</div>
                 )}
               </div>
               {categoryData.length > 0 && (
                 <div className="flex flex-wrap justify-center gap-4 mt-4">
                   {categoryData.map((cat) => (
                     <div key={cat.name} className="flex items-center gap-2">
-                      <div
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: cat.color }}
-                      />
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.color }} />
                       <span className="text-sm">{cat.name} ({cat.value})</span>
                     </div>
                   ))}
@@ -272,17 +177,12 @@ const ProfileDetails = ({ id }) => {
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={monthlyData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                      <XAxis dataKey="month" stroke="#9CA3AF" />
-                      <YAxis stroke="#9CA3AF" />
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis />
                       <Tooltip />
                       <Legend />
-                      <Bar
-                        dataKey="books"
-                        fill="#3B82F6"
-                        name="Books Added"
-                        radius={[4, 4, 0, 0]}
-                      />
+                      <Bar dataKey="books" fill="#3B82F6" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -296,34 +196,30 @@ const ProfileDetails = ({ id }) => {
 };
 
 const StatBox = ({ value, label, color }) => {
-  const colorClasses = {
+  const colorMap = {
     blue: "text-blue-600 dark:text-blue-400",
     green: "text-green-600 dark:text-green-400",
     orange: "text-orange-600 dark:text-orange-400",
     yellow: "text-yellow-600 dark:text-yellow-400",
   };
-
   return (
     <div className="text-center">
-      <div className={`text-2xl font-bold ${colorClasses[color] || ""}`}>{value}</div>
+      <div className={`text-2xl font-bold ${colorMap[color]}`}>{value}</div>
       <div className="text-sm text-gray-600 dark:text-gray-400">{label}</div>
     </div>
   );
 };
 
 const StatusRow = ({ label, count, color }) => {
-  const bgColors = {
+  const bgMap = {
     green: "bg-green-500",
     blue: "bg-blue-500",
     orange: "bg-orange-500",
   };
-
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-2">
-        <span className={`rounded px-2 py-1 text-xs font-semibold text-white ${bgColors[color]}`}>
-          {label.split(" ")[0]}
-        </span>
+        <span className={`rounded px-2 py-1 text-xs font-semibold text-white ${bgMap[color]}`}>{label.split(" ")[0]}</span>
         <span>{label}</span>
       </div>
       <span className="font-semibold">{count}</span>

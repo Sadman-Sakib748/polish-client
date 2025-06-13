@@ -4,6 +4,8 @@ import { motion } from "framer-motion";
 import LoadingSpinner from "../../LoadingSpinner/LoadingSpinner";
 import { useAxiosPublic } from "../../../hooks/useAxiosePublic";
 import useAuth from "../../../hooks/useAuth";
+import { Eye } from "lucide-react";
+import { Helmet } from "react-helmet";
 
 const statusColors = {
   Read: "bg-green-500",
@@ -73,6 +75,10 @@ const Bookshelf = () => {
 
   return (
     <div className="min-h-screen pt-16 px-4 bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-white">
+      <Helmet>
+        <title>Books | REview</title>
+      </Helmet>
+
       <div className="text-center mb-8">
         <h1 className="text-4xl font-bold mb-2">📚 Community Bookshelf</h1>
         <p className="text-lg text-gray-600 dark:text-gray-300">
@@ -124,18 +130,21 @@ const Bookshelf = () => {
                   const likeCount = book.likedBy?.length || 0;
 
                   const handleLike = () => {
-                    if (user?.email === book.email) return alert("Lojja korena?");
+                    if (user?.email === book.email)
+                      return alert("Lojja korena?");
                     axiosPublic
                       .patch(`/like/${book._id}`, { email: user?.email })
                       .then((res) => {
                         const updatedBooks = books.map((b) =>
                           b._id === book._id
                             ? {
-                                ...b,
-                                likedBy: res.data.liked
-                                  ? [...(b.likedBy || []), user?.email]
-                                  : (b.likedBy || []).filter((e) => e !== user?.email),
-                              }
+                              ...b,
+                              likedBy: res.data.liked
+                                ? [...(b.likedBy || []), user?.email]
+                                : (b.likedBy || []).filter(
+                                  (e) => e !== user?.email
+                                ),
+                            }
                             : b
                         );
                         setBooks(updatedBooks);
@@ -165,17 +174,17 @@ const Bookshelf = () => {
                         <button
                           onClick={handleLike}
                           className={`text-sm px-2 py-1 rounded ${isLiked
-                            ? "bg-red-500 text-white"
-                            : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200"
+                              ? "bg-red-500 text-white"
+                              : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200"
                             }`}
                         >
                           ❤️ {likeCount}
                         </button>
                         <Link
                           to={`/books/${book._id}`}
-                          className="text-blue-600 text-sm hover:underline"
+                          className="flex items-center gap-2 bg-blue-600 text-white px-1 rounded shadow-md hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-300 focus:ring-offset-1 duration-300 transform hover:translate-x-2 hover:shadow-lg dark:shadow-blue-700"
                         >
-                          Details
+                          <Eye />
                         </Link>
                       </div>
                       <span

@@ -1,8 +1,15 @@
 import { motion } from "framer-motion";
 import { BookOpen } from "lucide-react";
+import { Helmet } from "react-helmet";
 
 const Header = () => (
-  <section className="bg-gradient-to-r from-blue-600 to-purple-700 py-16 text-white">
+  <section className="py-16 text-white
+    bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500
+    dark:from-indigo-900 dark:via-purple-900 dark:to-pink-900
+  ">
+    <Helmet>
+      <title>Books | My Books</title>
+    </Helmet>
     <div className="container mx-auto px-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}

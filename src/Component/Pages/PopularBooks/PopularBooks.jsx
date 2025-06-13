@@ -4,38 +4,42 @@ import { Star, TrendingUp } from "lucide-react";
 import { Link } from "react-router"; // use react-router-dom for v6+
 import LoadingSpinner from "../../LoadingSpinner/LoadingSpinner";
 import { useAxiosPublic } from "../../../hooks/useAxiosePublic";
+import useAuth from "../../../hooks/useAuth";
 
 const PopularBooks = () => {
   const [books, setBooks] = useState([]);
   const [popularBooks, setPopularBooks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const axiosPublic = useAxiosPublic();;
+  const axiosPublic = useAxiosPublic();
+  const {user} = useAuth();
 
- useEffect(() => {
-  async function fetchBooks() {
-    setLoading(true);
-    try {
-      const res = await axiosPublic.get("/books");
-      const data = res.data;
+  const accessToken = user?.accessToken;
 
-      // Sort books by upvotes & rating to get top 6
-      const sorted = data
-        .sort((a, b) => b.upvotes - a.upvotes || b.rating - a.rating)
-        .slice(0, 6);
+  useEffect(() => {
+    async function fetchBooks() {
+      setLoading(true);
+      try {
+        const res = await axiosPublic.get("/books");
+        const data = res.data;
 
-      setBooks(data);
-      setPopularBooks(sorted);
-    } catch (error) {
-      console.error(error);
-      setBooks([]);
-      setPopularBooks([]);
-    } finally {
-      setLoading(false);
+        // Sort books by upvotes & rating to get top 6
+        const sorted = data
+          .sort((a, b) => b.upvotes - a.upvotes || b.rating - a.rating)
+          .slice(0, 6);
+
+        setBooks(data);
+        setPopularBooks(sorted);
+      } catch (error) {
+        console.error(error);
+        setBooks([]);
+        setPopularBooks([]);
+      } finally {
+        setLoading(false);
+      }
     }
-  }
 
-  fetchBooks();
-}, [axiosPublic]);
+    fetchBooks();
+  }, [axiosPublic]);
 
   return (
     <section className="py-16 bg-white dark:bg-gray-900">
@@ -52,8 +56,8 @@ const PopularBooks = () => {
           </p>
         </motion.div>
 
-        {loading ? (         
-            <LoadingSpinner />
+        {loading ? (
+          <LoadingSpinner />
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {popularBooks.map((book, index) => (
@@ -100,10 +104,24 @@ const PopularBooks = () => {
 
         <div className="mt-12 text-center">
           <Link to="/Bookshelf">
-            <button className="inline-block rounded border border-gray-700 dark:border-gray-300 px-6 py-3 text-lg font-semibold text-gray-700 dark:text-gray-100 transition hover:bg-gray-100 dark:hover:bg-gray-700">
+            <button
+              className="
+      flex items-center gap-2
+      bg-blue-700 text-white
+      px-4 py-2 rounded shadow-md
+      hover:bg-blue-800
+      dark:bg-blue-400 dark:text-gray-900
+      dark:hover:bg-blue-500
+      focus:outline-none focus:ring-2 focus:ring-blue-400
+      dark:focus:ring-blue-300 focus:ring-offset-1
+      duration-300 transform hover:translate-x-1 hover:shadow-lg
+      dark:shadow-blue-600
+    "
+            >
               View All Books
             </button>
           </Link>
+
         </div>
       </div>
     </section>

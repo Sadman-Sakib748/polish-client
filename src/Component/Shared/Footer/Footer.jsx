@@ -5,6 +5,7 @@ import {
     Github,
     Linkedin,
 } from 'lucide-react';
+import books from '../../../assets/books.jpg'
 
 const Footer = () => {
     return (
@@ -14,7 +15,10 @@ const Footer = () => {
                 <div className="grid md:grid-cols-3 gap-8 border-b border-gray-300 dark:border-gray-700 pb-8">
                     {/* Brand */}
                     <div>
-                        <h2 className="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-2">MyBrand</h2>
+                        <div className='flex items-center'>
+                            <img className='w-14' src={books} alt="" />
+                            <h2>Books</h2>
+                        </div>
                         <p className="text-sm">
                             Empowering creativity and innovation through modern web solutions.
                         </p>
@@ -46,7 +50,7 @@ const Footer = () => {
 
                 {/* Bottom section */}
                 <div className="mt-8 flex flex-col md:flex-row items-center justify-between text-sm">
-                    <p>&copy; {new Date().getFullYear()} MyBrand. All rights reserved.</p>
+                    <p>&copy; {new Date().getFullYear()} Books. All rights reserved.</p>
                     <div className="space-x-4 mt-2 md:mt-0">
                         <a href="#" className="hover:text-blue-600">Privacy Policy</a>
                         <a href="#" className="hover:text-blue-600">Terms of Service</a>

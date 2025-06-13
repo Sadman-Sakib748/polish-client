@@ -1,6 +1,4 @@
-// 👇 Import Heart
 import { useParams } from "react-router";
-import useAuth from "../../../hooks/useAuth";
 import { useEffect, useState } from "react";
 import { Star, Heart, MessageCircle } from "lucide-react";
 import { motion } from "framer-motion";
@@ -8,6 +6,7 @@ import ReviewSection from "../ReviewSection/ReviewSection";
 import LoadingSpinner from "../../LoadingSpinner/LoadingSpinner";
 import toast from "react-hot-toast";
 import { useAxiosPublic } from "../../../hooks/useAxiosePublic";
+import useAuth from "../../../hooks/useAuth";
 
 const MyBooks = () => {
   const { id } = useParams();
@@ -32,7 +31,6 @@ const MyBooks = () => {
         const response = await axiusePublic.get(`/books/${id}`);
         setCurrentBook(response.data);
 
-        // Auto-mark as liked if user has liked it
         if (response.data.likedBy?.includes(currentUser.email)) {
           setLikedBooks((prev) => new Set(prev).add(id));
         }
@@ -40,6 +38,7 @@ const MyBooks = () => {
         toast.error("Failed to load book details.");
       }
     };
+
 
     const fetchReviews = async () => {
       try {
@@ -69,7 +68,6 @@ const MyBooks = () => {
   useEffect(() => {
     localStorage.setItem("likedBooks", JSON.stringify(Array.from(likedBooks)));
   }, [likedBooks]);
-
 
   const handleLike = async (bookId) => {
     try {
@@ -148,7 +146,8 @@ const MyBooks = () => {
   };
 
   return (
-    <div className="min-h-screen pt-16 bg-gray-100 px-4 py-8">
+    <div className="min-h-screen pt-16 bg-gray-100 dark:bg-gray-900 px-4 py-8">
+
       {currentBook ? (
         <div className="max-w-6xl mx-auto grid gap-8 lg:grid-cols-3">
           {(() => {
@@ -170,11 +169,12 @@ const MyBooks = () => {
             return (
               <>
                 {/* Book Card */}
+
                 <motion.div
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.6 }}
-                  className="bg-white rounded-lg shadow p-6"
+                  className="bg-white dark:bg-gray-800 rounded-lg shadow p-6"
                 >
                   <div className="text-center">
                     <img
@@ -183,15 +183,15 @@ const MyBooks = () => {
                       className="mx-auto mb-4 rounded-lg shadow"
                     />
                     <div className="mb-4 flex justify-center space-x-2">
-                      <span className="bg-gray-200 text-gray-700 px-2 py-1 rounded text-sm">
+                      <span className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded text-sm">
                         {category || "No Category"}
                       </span>
                       <span
                         className={`text-white px-2 py-1 rounded text-sm ${readingStatus === "Read"
-                            ? "bg-green-500"
-                            : readingStatus === "Reading"
-                              ? "bg-blue-500"
-                              : "bg-orange-500"
+                          ? "bg-green-500"
+                          : readingStatus === "Reading"
+                            ? "bg-blue-500"
+                            : "bg-orange-500"
                           }`}
                       >
                         {readingStatus || "Unknown"}
@@ -201,27 +201,31 @@ const MyBooks = () => {
                       {/* Star */}
                       <div className="flex items-center gap-1 text-yellow-500">
                         <Star className="w-5 h-5 fill-yellow-400" />
-                        <span>{rating?.toFixed(1) || "N/A"}</span>
+                        <span>
+                          {typeof rating === 'number' ? rating.toFixed(1) : "N/A"}
+                        </span>
                       </div>
+
                       {/* Like Button */}
                       <button
                         onClick={() => handleLike(_id)}
-                        className={`text-sm px-2 py-1 rounded border ${likedBooks.has(_id)
-                            ? "bg-pink-100 border-pink-300 text-pink-600"
-                            : "bg-white border-gray-300 text-gray-500"
+                        className={`text-sm px-2 py-1 rounded border transition-colors duration-200 ${likedBooks.has(_id)
+                          ? "bg-pink-100 border-pink-300 text-pink-600 dark:bg-pink-900 dark:border-pink-600 dark:text-pink-400"
+                          : "bg-white border-gray-300 text-gray-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-400"
                           }`}
                       >
                         ❤️ {likedBy.length || 0}
                       </button>
                     </div>
 
-                    <p className="text-sm text-gray-600">
+
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
                       <strong>Added by:</strong> {userName || "Unknown"}
                     </p>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
                       <strong>Email:</strong> {userEmail || "N/A"}
                     </p>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
                       <strong>Total Pages:</strong> {totalPages || "?"}
                     </p>
                   </div>
@@ -234,29 +238,29 @@ const MyBooks = () => {
                   transition={{ duration: 0.6 }}
                   className="lg:col-span-2 space-y-6"
                 >
-                  <div className="bg-white rounded-lg shadow p-6">
-                    <h2 className="text-2xl font-bold mb-2">{title || "Untitled"}</h2>
-                    <p className="text-lg text-gray-600 mb-4">by {author || "Unknown"}</p>
-                    <h3 className="text-lg font-semibold mb-2">Overview</h3>
-                    <p className="text-gray-700">{overview || "No overview available."}</p>
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                    <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">{title || "Untitled"}</h2>
+                    <p className="text-lg text-gray-600 dark:text-gray-300 mb-4">by {author || "Unknown"}</p>
+                    <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">Overview</h3>
+                    <p className="text-gray-700 dark:text-gray-300">{overview || "No overview available."}</p>
                   </div>
 
-                  <div className="bg-white rounded-lg shadow p-6">
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                     <div className="flex items-center gap-2 mb-4">
-                      <MessageCircle className="w-5 h-5 text-gray-600" />
-                      <h3 className="text-lg font-semibold">Write a Review</h3>
+                      <MessageCircle className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Write a Review</h3>
                     </div>
                     <textarea
                       rows="4"
                       placeholder="Share your thoughts..."
-                      className="w-full p-3 border border-gray-300 rounded"
+                      className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
                       value={newReview}
                       onChange={(e) => setNewReview(e.target.value)}
                     />
                     <button
                       onClick={handleSubmitReview}
                       disabled={!newReview.trim()}
-                      className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                      className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded transition-colors duration-200"
                     >
                       Submit Review
                     </button>
@@ -267,6 +271,7 @@ const MyBooks = () => {
                     bookReviews={bookReviews}
                     setBookReviews={setBookReviews}
                     handleDeleteReview={handleDeleteReview}
+                  // Pass dark mode styles if your ReviewSection supports it
                   />
                 </motion.div>
               </>
@@ -274,7 +279,7 @@ const MyBooks = () => {
           })()}
         </div>
       ) : (
-        <div className="text-center text-gray-600">
+        <div className="text-center text-gray-600 dark:text-gray-400">
           <LoadingSpinner />
         </div>
       )}

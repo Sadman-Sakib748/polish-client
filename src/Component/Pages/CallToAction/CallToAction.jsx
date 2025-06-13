@@ -17,7 +17,7 @@ const CallToAction = () => {
           Create your free account and start your reading journey today!
         </p>
         <motion.button
-          onClick={() => navigate("/register")}
+          onClick={() => navigate("/signUp")}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           transition={{ type: "spring", stiffness: 300, damping: 20 }}

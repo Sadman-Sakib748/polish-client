@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import LoadingSpinner from "../../LoadingSpinner/LoadingSpinner";
 import { useAxiosPublic } from "../../../hooks/useAxiosePublic";
+import useAuth from "../../../hooks/useAuth";
 
 // Define icons per category (you can extend or customize)
 const categoryIcons = {
@@ -22,6 +23,7 @@ const FeaturedCategories = () => {
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(false);
     const axiousPublic = useAxiosPublic();
+    const {user} = useAuth();
 
 useEffect(() => {
   async function fetchBooks() {

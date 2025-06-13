@@ -1,16 +1,18 @@
 // components/Navbar.jsx
 import React, { useState, useEffect } from 'react';
 import { Menu, X, Sun, Moon, LogOut } from 'lucide-react';
-import { Link, useNavigation } from 'react-router';  // FIXED import
+import { Link, useNavigate, useNavigation } from 'react-router';  // FIXED import
 import useAuth from '../../hooks/useAuth';
 import LoadingSpinner from '../LoadingSpinner/LoadingSpinner';
 import toast from 'react-hot-toast';
+import books from '../../assets/books.jpg'
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const { user, logOut } = useAuth();
   const navigation = useNavigation();
+  const navigate = useNavigate();
 
   const navLinks = [
   { name: 'Home', href: '/' },
@@ -42,6 +44,7 @@ const Navbar = () => {
     logOut()
       .then(() => {
         toast.success('User logged out')
+        navigate('/signUp')
         console.log("User logged out")
       })
       .catch(err => console.error("Logout error:", err.message));
@@ -51,7 +54,10 @@ const Navbar = () => {
     <header className="bg-white dark:bg-gray-900 shadow-sm fixed top-0 left-0 w-full z-50">
       <div className="max-w-7xl mx-auto flex justify-between items-center px-6 py-3">
         <Link to="/" className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-          MyBrand
+         <div className='flex items-center'>
+           <img className='w-14' src={books} alt="" />
+          <h2>Books</h2>
+         </div>
         </Link>
 
         <nav className="hidden md:flex space-x-6 items-center text-gray-700 dark:text-gray-300">

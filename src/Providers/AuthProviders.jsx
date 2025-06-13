@@ -43,21 +43,6 @@ const AuthProviders = ({ children }) => {
             console.log(currentUser, "profile");
             setUser(currentUser);
             setLoading(false);
-
-            if (currentUser?.email) {
-                const userData = { email: currentUser.email };
-                axios.post('http://localhost:3000/jwt', userData, {
-                    withCredentials: true
-                })
-                    .then(res => {
-                        const token = res.data.token;
-                        localStorage.setItem('token', token);
-                    })
-                    .catch(error => console.log(error));
-            } else {
-                // Remove token if user logs out or is not authenticated
-                localStorage.removeItem('token');
-            }
         });
 
         return unsubscribe;

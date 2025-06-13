@@ -5,32 +5,78 @@ import { useAxiosPublic } from "../../../hooks/useAxiosePublic";
 
 const CommunityStats = () => {
   const [books, setBooks] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [averageRating, setAverageRating] = useState(0);
-  const axiousePublic = useAxiosPublic();
+  const [animatedBookCount, setAnimatedBookCount] = useState(1);
+  const [animatedReaderCount, setAnimatedReaderCount] = useState(1);
+  const [activeReaders, setActiveReaders] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const axiosPublic = useAxiosPublic();
 
+  // Fetch books and rating
   useEffect(() => {
-    async function fetchBooks() {
+    const fetchBooks = async () => {
       setLoading(true);
       try {
-        const res = await axiousePublic.get("/books");
-        const data = res.data;
+        const res = await axiosPublic.get("/books");
+        const data = res.data || [];
         setBooks(data);
 
-        // Calculate average rating
-        const totalRating = data.reduce((acc, book) => acc + (book.rating || 0), 0);
-        const avg = data.length > 0 ? totalRating / data.length : 0;
-        setAverageRating(avg.toFixed(1));
+        const validRatings = data.filter(book => book.rating >= 1 && book.rating <= 5);
+        const totalRating = validRatings.reduce((acc, book) => acc + book.rating, 0);
+        const avg = validRatings.length > 0 ? totalRating / validRatings.length : 0;
+        setAverageRating(Number(avg.toFixed(1)));
       } catch (error) {
-        console.error(error);
+        console.error("Failed to fetch books:", error);
         setBooks([]);
         setAverageRating(0);
       } finally {
         setLoading(false);
       }
-    }
+    };
+
     fetchBooks();
-  }, []);
+  }, [axiosPublic]);
+
+  // Fetch active readers from API
+  useEffect(() => {
+    const fetchActiveReaders = async () => {
+      try {
+        const res = await axiosPublic.get("/books");
+        setActiveReaders(res.data?.activeReaders || 0);
+      } catch (error) {
+        console.error("Failed to fetch active readers:", error);
+        setActiveReaders(0);
+      }
+    };
+
+    fetchActiveReaders();
+  }, [axiosPublic]);
+
+  // Animate book count
+  useEffect(() => {
+    if (books.length > 0) {
+      let count = 1;
+      const interval = setInterval(() => {
+        count += Math.ceil(books.length / 50);
+        setAnimatedBookCount(prev => (count > books.length ? books.length : count));
+        if (count >= books.length) clearInterval(interval);
+      }, 20);
+      return () => clearInterval(interval);
+    }
+  }, [books]);
+
+  // Animate active readers count
+  useEffect(() => {
+    if (activeReaders > 0) {
+      let count = 1;
+      const interval = setInterval(() => {
+        count += Math.ceil(activeReaders / 50);
+        setAnimatedReaderCount(prev => (count > activeReaders ? activeReaders : count));
+        if (count >= activeReaders) clearInterval(interval);
+      }, 20);
+      return () => clearInterval(interval);
+    }
+  }, [activeReaders]);
 
   return (
     <section className="py-16 bg-white dark:bg-gray-900">
@@ -61,12 +107,12 @@ const CommunityStats = () => {
               <BookOpen className="h-12 w-12 text-blue-600" />
             </div>
             <h3 className="mb-2 text-3xl font-bold text-gray-900 dark:text-white">
-              {loading ? "..." : books.length}
+              {loading ? "..." : animatedBookCount}
             </h3>
             <p className="text-gray-600 dark:text-gray-300">Books in Library</p>
           </motion.div>
 
-          {/* Active Readers (static for now) */}
+          {/* Active Readers */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -76,7 +122,9 @@ const CommunityStats = () => {
             <div className="mb-4 flex justify-center">
               <Users className="h-12 w-12 text-green-600" />
             </div>
-            <h3 className="mb-2 text-3xl font-bold text-gray-900 dark:text-white">1,234</h3>
+            <h3 className="mb-2 text-3xl font-bold text-gray-900 dark:text-white">
+              {loading ? "..." : animatedReaderCount}
+            </h3>
             <p className="text-gray-600 dark:text-gray-300">Active Readers</p>
           </motion.div>
 

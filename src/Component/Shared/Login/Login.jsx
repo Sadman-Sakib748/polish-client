@@ -6,6 +6,7 @@ import { useNavigate } from "react-router";
 import { useState } from "react";
 import GoogleSignInButton from "../../Pages/GoogleSignInButton/GoogleSignInButton";
 import toast from "react-hot-toast";
+import { Helmet } from "react-helmet";
 
 const Login = () => {
   const { signIn,googleSignIn,updateUserProfile } = useAuth();
@@ -51,6 +52,9 @@ const Login = () => {
   return (
     <div className="min-h-screen flex flex-col md:flex-row items-center justify-center bg-gradient-to-r from-green-100 to-blue-100 p-6">
       {/* Lottie Animation */}
+      <Helmet>
+        <title>Books | Login</title>
+      </Helmet>
       <div className="w-full md:w-1/2 flex justify-center">
         <Lottie animationData={loginAnimation} loop className="w-full max-w-md" />
       </div>

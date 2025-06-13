@@ -52,7 +52,7 @@ export const router = createBrowserRouter([
 
             },
             {
-                path: "books/:id/edit",
+                path: "edit/:id",
                 element: <PrivateRoutes><CreateBookForm /></PrivateRoutes>,
                 loader: ({ params }) => fetch(`http://localhost:3000/books/${params.id}`)
             },

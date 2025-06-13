@@ -6,6 +6,7 @@ import useAuth from "../../../hooks/useAuth";
 import GoogleSignInButton from "../../Pages/GoogleSignInButton/GoogleSignInButton";
 import { useNavigate } from "react-router";
 import toast from "react-hot-toast";
+import { Helmet } from "react-helmet";
 
 const Register = () => {
   const { register, handleSubmit, formState: { errors }, reset } = useForm();
@@ -55,7 +56,9 @@ const Register = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-200 dark:from-gray-800 dark:to-gray-900 flex flex-col md:flex-row items-center justify-center p-6">
-
+      <Helmet>
+        <title>Books | Register</title>
+      </Helmet>
       {/* Lottie Animation */}
       <div className="w-full md:w-1/2 flex justify-center mb-10 md:mb-0">
         <div className="w-80 md:w-96">

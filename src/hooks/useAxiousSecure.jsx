@@ -1,36 +1,33 @@
 import axios from "axios";
-import { useEffect } from "react";
 import useAuth from "./useAuth";
-import { useNavigate } from "react-router";
 
 
 const axiosIntance = axios.create({
-    baseURL: 'http://localhost:3000',
-    // baseURL: 'http://localhost:3000',
-    withCredentials: true
+    baseURL: 'http://localhost:3000'
+
 })
 
 const useAxiousSecure = () => {
-    const { logOut } = useAuth();
-    const navigate = useNavigate();
-    useEffect(() => {
-        axiosIntance.interceptors.response.use(response => {
-            return response;
-        }, error => {
-            console.log('api response error status', error.status)
-
-            if (error.status === 401 || error.status === 403) {
-                console.log('need to logout')
-                logOut()
-                    .then(() => {
-                        console.log('logout user')
-                        navigate('/login')
-                    })
-                    .catch(error => console.log(error))
-            }
-            return Promise.reject(error)
-        })
-    }, [])
+    const { user, logOut } = useAuth();
+    const accessToken= user.accessToken;
+    axiosIntance.interceptors.request.use(config => {
+        config.headers.authorization = `Bearer ${user.accessToken}`
+        return config;
+    });
+    axiosIntance.interceptors.response.use(response => {
+        return response;
+    }, error => {
+        if (error.status === 401) {
+            logOut()
+                .then(() => {
+                    console.log('sign out user for 401 status code ')
+                })
+                .catch(err => {
+                    console.log(err)
+                })
+        }
+        return Promise.reject(error)
+    })
 
 
     return axiosIntance;

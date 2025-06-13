@@ -110,24 +110,11 @@ const CreatePage = () => {
     books.filter((book) => book.status === status || book.readingStatus === status).length;
 
   if (loading) return <LoadingSpinner />;
-  if (error) return <p className="text-center text-red-600">{error}</p>;
+  if (error) return <p className="text-center text-red-600 dark:text-red-400">{error}</p>;
 
   return (
-    <div className="min-h-screen pt-16 bg-gray-50">
+    <div className="min-h-screen pt-16 bg-gray-50 dark:bg-gray-900 transition-colors duration-500">
       <Header />
-
-      <div className="container mx-auto px-4 text-right mt-4">
-        <button
-          onClick={() => {
-            setShowCreateForm((v) => !v);
-            setEditBook(null);
-          }}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          {showCreateForm ? "Cancel" : "Add Book"}
-        </button>
-      </div>
-
       {showCreateForm && (
         <CreateBookForm
           onSubmit={handleCreateOrUpdateBook}
@@ -140,10 +127,10 @@ const CreatePage = () => {
 
       <Stats
         stats={[
-          { label: "Total Books", count: books.length, color: "text-blue-600" },
-          { label: "Books Read", count: getStatusCount("Read"), color: "text-green-600" },
-          { label: "Currently Reading", count: getStatusCount("Reading"), color: "text-blue-600" },
-          { label: "Want to Read", count: getStatusCount("Want-to-Read"), color: "text-orange-600" },
+          { label: "Total Books", count: books.length, color: "text-blue-600 dark:text-blue-400" },
+          { label: "Books Read", count: getStatusCount("Read"), color: "text-green-600 dark:text-green-400" },
+          { label: "Currently Reading", count: getStatusCount("Reading"), color: "text-blue-600 dark:text-blue-400" },
+          { label: "Want to Read", count: getStatusCount("Want-to-Read"), color: "text-orange-600 dark:text-orange-400" },
         ]}
       />
 
@@ -158,7 +145,7 @@ const CreatePage = () => {
 
       <section className="py-8">
         <div className="container mx-auto px-4">
-          <h2 className="text-2xl font-bold mb-6">
+          <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-gray-100">
             {filteredBooks.length} Book{filteredBooks.length !== 1 && "s"} Found
           </h2>
 
@@ -179,7 +166,7 @@ const CreatePage = () => {
               ))}
             </div>
           ) : (
-            <p className="text-center text-gray-500">No books found matching the filters.</p>
+            <p className="text-center text-gray-600 dark:text-gray-400">No books found matching the filters.</p>
           )}
         </div>
       </section>

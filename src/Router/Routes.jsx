@@ -41,20 +41,22 @@ export const router = createBrowserRouter([
             },
             {
                 path: 'myGroup/:email',
-                loader: ({ params }) => fetch(`http://localhost:3000/booking/${params.email}`),
                 element: <PrivateRoutes><CreatePage></CreatePage></PrivateRoutes>,
+                loader: ({ params }) => fetch(`https://assignment-server-11-dun.vercel.app/booking/${params.email}`,{
+                    credentials: 'include'
+                }),
             },
 
             {
                 path: "books/:id",
                 element: <PrivateRoutes><MyBooks /></PrivateRoutes>,
-                loader: ({ params }) => fetch(`http://localhost:3000/books/${params.id}`)
+                loader: ({ params }) => fetch(`https://assignment-server-11-dun.vercel.app/books/${params.id}`)
 
             },
             {
                 path: "edit/:id",
                 element: <PrivateRoutes><CreateBookForm /></PrivateRoutes>,
-                loader: ({ params }) => fetch(`http://localhost:3000/books/${params.id}`)
+                loader: ({ params }) => fetch(`https://assignment-server-11-dun.vercel.app/books/${params.id}`)
             },
 
             {

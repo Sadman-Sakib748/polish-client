@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { Player } from "@lottiefiles/react-lottie-player";
 import animition from '../../../assets/Lottie.json';
-import axios from "axios";
 import { toast } from "react-hot-toast";
 import useAuth from "../../../hooks/useAuth";
 import { useAxiosPublic } from "../../../hooks/useAxiosePublic";
 import { useNavigate } from "react-router";
 import { Helmet } from "react-helmet";
+import useAxiousSecure from "../../../hooks/useAxiousSecure";
 
 const AddBook = () => {
   const { user } = useAuth();
   const axiosPublic = useAxiosPublic();
   const navigate = useNavigate();
+  const axiouseSecure = useAxiousSecure();
 
   const generateInitialData = () => ({
     title: "",
@@ -58,7 +59,7 @@ const AddBook = () => {
         upvotes: 0,
       };
 
-      await axiosPublic.post("/books", payload);
+      await axiouseSecure.post("/books", payload);
       toast.success("📚 Book added successfully!");
       setFormData(generateInitialData()); // reset form
       navigate('/Bookshelf')

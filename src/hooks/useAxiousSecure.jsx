@@ -3,13 +3,13 @@ import useAuth from "./useAuth";
 
 
 const axiosIntance = axios.create({
-    baseURL: 'http://localhost:3000'
+    baseURL: 'https://assignment-server-11-dun.vercel.app',
+    withCredentials: true
 
 })
 
 const useAxiousSecure = () => {
     const { user, logOut } = useAuth();
-    const accessToken= user.accessToken;
     axiosIntance.interceptors.request.use(config => {
         config.headers.authorization = `Bearer ${user.accessToken}`
         return config;
@@ -18,13 +18,13 @@ const useAxiousSecure = () => {
         return response;
     }, error => {
         if (error.status === 401) {
-            logOut()
-                .then(() => {
-                    console.log('sign out user for 401 status code ')
-                })
-                .catch(err => {
-                    console.log(err)
-                })
+            // logOut()
+            //     .then(() => {
+            //         console.log('sign out user for 401 status code ')
+            //     })
+            //     .catch(err => {
+            //         console.log(err)
+            //     })
         }
         return Promise.reject(error)
     })

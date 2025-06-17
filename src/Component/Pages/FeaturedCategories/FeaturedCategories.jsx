@@ -66,7 +66,8 @@ useEffect(() => {
 
     if (loading) {
         return (
-            <section className="bg-gray-50 dark:bg-gray-900 py-16 text-center text-gray-700 dark:text-gray-300">
+            <section className="bg-gray-50 dark:bg-gray-900 py-16 text-center
+             text-gray-700 dark:text-gray-300">
                 <LoadingSpinner />
             </section>
         );
@@ -97,9 +98,13 @@ useEffect(() => {
                             whileInView={{ opacity: 1, scale: 1 }}
                             transition={{ duration: 0.6, delay: index * 0.1 }}
                         >
-                            <div className="group cursor-pointer rounded-lg bg-white dark:bg-gray-800 p-8 text-center shadow-sm transition-all hover:shadow-lg hover:-translate-y-2">
+                            <div className="group cursor-pointer rounded-lg
+                             bg-white dark:bg-gray-800 p-8 text-center shadow-sm 
+                             transition-all hover:shadow-lg hover:-translate-y-2">
                                 <div
-                                    className={`mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full ${category.color} text-2xl text-white`}
+                                    className={`mx-auto mb-4 flex h-16 w-16 items-center
+                                         justify-center rounded-full ${category.color} text-2xl
+                                          text-white`}
                                 >
                                     {category.icon}
                                 </div>

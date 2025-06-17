@@ -129,28 +129,28 @@ const Bookshelf = () => {
                   const isLiked = book.likedBy?.includes(user?.email);
                   const likeCount = book.likedBy?.length || 0;
 
-                  const handleLike = () => {
-                    if (user?.email === book.email)
-                      return alert("Lojja korena?");
-                    axiosPublic
-                      .patch(`/like/${book._id}`, { email: user?.email })
-                      .then((res) => {
-                        const updatedBooks = books.map((b) =>
-                          b._id === book._id
-                            ? {
-                              ...b,
-                              likedBy: res.data.liked
-                                ? [...(b.likedBy || []), user?.email]
-                                : (b.likedBy || []).filter(
-                                  (e) => e !== user?.email
-                                ),
-                            }
-                            : b
-                        );
-                        setBooks(updatedBooks);
-                      })
-                      .catch((err) => console.error(err));
-                  };
+                  // const handleLike = () => {
+                  //   if (user?.email === book.email)
+                  //     return alert("Lojja korena?");
+                  //   axiosPublic
+                  //     .patch(`/like/${book._id}`, { email: user?.email })
+                  //     .then((res) => {
+                  //       const updatedBooks = books.map((b) =>
+                  //         b._id === book._id
+                  //           ? {
+                  //             ...b,
+                  //             likedBy: res.data.liked
+                  //               ? [...(b.likedBy || []), user?.email]
+                  //               : (b.likedBy || []).filter(
+                  //                 (e) => e !== user?.email
+                  //               ),
+                  //           }
+                  //           : b
+                  //       );
+                  //       setBooks(updatedBooks);
+                  //     })
+                  //     .catch((err) => console.error(err));
+                  // };
 
                   return (
                     <motion.div
@@ -167,12 +167,13 @@ const Bookshelf = () => {
                       <p className="text-sm text-gray-600 dark:text-gray-400">
                         {book.author}
                       </p>
+                      
                       <p className="text-sm mt-1 line-clamp-3">
                         {book.description}
                       </p>
                       <div className="flex justify-between items-center mt-3">
                         <button
-                          onClick={handleLike}
+                          // onClick={handleLike}
                           className={`text-sm px-2 py-1 rounded ${isLiked
                               ? "bg-red-500 text-white"
                               : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200"

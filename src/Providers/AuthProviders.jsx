@@ -42,7 +42,25 @@ const AuthProviders = ({ children }) => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
             console.log(currentUser, "profile");
             setUser(currentUser);
-            setLoading(false);
+            if (currentUser?.email) {
+                const user = { email: currentUser.email }
+                axios.post('https://assignment-server-11-dun.vercel.app/jwt', user, {
+                    withCredentials: true
+                })
+                    .then(res => {
+                        console.log('login token', res.data)
+                        setLoading(false);
+                    })
+            } else {
+                axios.post('https://assignment-server-11-dun.vercel.app/logout', {}, {
+                    withCredentials: true
+                })
+                    .then(res => {
+                        console.log('logout', res.data)
+                        setLoading(false);
+                    })
+            }
+
         });
 
         return unsubscribe;

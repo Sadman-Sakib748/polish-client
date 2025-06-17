@@ -99,7 +99,7 @@ const Login = () => {
 
         <p className="text-center text-sm mt-4">
           Don't have an account?{" "}
-          <a href="/register" className="text-blue-500 underline">Register</a>
+          <a href="/signUp" className="text-blue-500 underline">Register</a>
         </p>
         {/* Google Sign In Button */}
         <GoogleSignInButton handleGoogleSignIn={handleGoogleSignIn} loading={loading} error={error} />

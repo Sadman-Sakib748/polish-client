@@ -1,12 +1,41 @@
-# React + Vite
+# 📚 Assignment-11: Virtual Bookshelf
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A feature-rich web application for managing a virtual bookshelf. Users can add, edit, review, and track their favorite books. Built with React, TailwindCSS, Firebase authentication, Framer Motion animations, and a custom Express + MongoDB backend.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🚀 Features
 
-## Expanding the ESLint configuration
+- 🔐 Firebase Authentication (Email & Social Login)
+- 📚 Book Management (Add/Edit/Delete Books)
+- ⭐ Book Reviews with Rating, Upvote, and Delete Options
+- 📊 Dashboard with Analytics (Using Recharts)
+- 💬 Toast Notifications with React Hot Toast & Toastify
+- 🌈 Animations with Lottie and Framer Motion
+- 🎨 Styled using Tailwind CSS
+- 🔄 React Hook Form for form validation
+- ⚙️ Backend powered by Express.js + MongoDB (Optional)
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
+
+## 🛠️ Tech Stack
+
+| Technology       | Description                        |
+|------------------|------------------------------------|
+| React            | Frontend Framework                 |
+| Vite             | Fast build tool for React          |
+| Tailwind CSS     | Utility-first CSS framework        |
+| Firebase         | Authentication and Hosting         |
+| Framer Motion    | Animations                         |
+| Recharts         | Charting library                   |
+| Axios            | HTTP Requests                      |
+| React Router     | Client-side routing                |
+| React Hook Form  | Form Handling & Validation         |
+| React Toastify   | User Notifications                 |
+| Lottie           | Animations                         |
+
+---
+
+## 🧑‍💻 Installation
+
+live link: https://assignment-11-a457b.web.app

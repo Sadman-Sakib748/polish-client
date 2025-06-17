@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { useLoaderData, useNavigate } from 'react-router';
 import toast from 'react-hot-toast';
-import { useAxiosPublic } from '../../../hooks/useAxiosePublic';
 import Lottie from 'lottie-react';
 import lottly from '../../../assets/edit.json';
-import axios from 'axios';
 import { Helmet } from 'react-helmet';
+import useAxiousSecure from '../../../hooks/useAxiousSecure';
 
 const readingStatusOptions = ["Read", "Reading", "Want-to-Read"];
 const categories = ["Fiction", "Non-fiction", "Fantasy"];
@@ -13,7 +12,7 @@ const categories = ["Fiction", "Non-fiction", "Fantasy"];
 const CreateBookForm = () => {
   const item = useLoaderData();
   const navigate = useNavigate();
-  const axiosPublic = useAxiosPublic();
+  const axiousSecure = useAxiousSecure();
 
   const [loading, setLoading] = useState(false);
 
@@ -45,10 +44,10 @@ const CreateBookForm = () => {
 
     try {
       console.log("Sending data:", formData);
-      const response = await axiosPublic.patch(`/books/${item._id}`, formData);
+      const response = await axiousSecure.patch(`/books/${item._id}`, formData);
       if (response.status === 200 || response.status === 201) {
         toast.success("Book updated successfully");
-        navigate("/books");
+        navigate("/Bookshelf");
       } else {
         console.warn("Unexpected response:", response);
         toast.error("Unexpected server response");

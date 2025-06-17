@@ -1,289 +1,336 @@
 import { useParams } from "react-router";
 import { useEffect, useState } from "react";
-import { Star, Heart, MessageCircle } from "lucide-react";
-import { motion } from "framer-motion";
-import ReviewSection from "../ReviewSection/ReviewSection";
-import LoadingSpinner from "../../LoadingSpinner/LoadingSpinner";
 import toast from "react-hot-toast";
 import { useAxiosPublic } from "../../../hooks/useAxiosePublic";
 import useAuth from "../../../hooks/useAuth";
+import { motion } from "framer-motion";
+import LoadingSpinner from "../../LoadingSpinner/LoadingSpinner";
+import Cards from "../Cards/Cards";
+import ReviewForm from "../ReviewForm/ReviewForm";
+import ReviewSection from "../ReviewSection/ReviewSection";
+import axios from "axios";
 
 const MyBooks = () => {
   const { id } = useParams();
   const { user } = useAuth();
-  const [currentBook, setCurrentBook] = useState(null);
-  const [votedBooks, setVotedBooks] = useState(new Set());
-  const [likedBooks, setLikedBooks] = useState(new Set());
-  const [newReview, setNewReview] = useState("");
-  const [bookReviews, setBookReviews] = useState([]);
   const axiusePublic = useAxiosPublic();
+
+  const [currentBook, setCurrentBook] = useState(null);
+  const [likedBooks, setLikedBooks] = useState(new Set());
+  const [bookReviews, setBookReviews] = useState([]);
+  const [newReview, setNewReview] = useState("");
+  const [editingReviewId, setEditingReviewId] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const currentUser = user || {
     displayName: "Anonymous",
     email: "unknown@example.com",
+    photoURL: null,
   };
+
+  // Helper to get email safely
+  const getCurrentUserEmail = (user) => user?.email || "unknown@example.com";
+
+  // Key for localStorage for reviews per book id
+  const localStorageKey = `reviews_book_${id}`;
 
   useEffect(() => {
     if (!id) return;
 
-    const fetchBook = async () => {
+    const fetchData = async () => {
+      setLoading(true);
       try {
-        const response = await axiusePublic.get(`/books/${id}`);
-        setCurrentBook(response.data);
+        // Fetch book details
+        const bookRes = await axiusePublic.get(`/books/${id}`);
+        setCurrentBook(bookRes.data);
 
-        if (response.data.likedBy?.includes(currentUser.email)) {
-          setLikedBooks((prev) => new Set(prev).add(id));
+        // Fetch reviews for the book from server
+        const reviewsRes = await axiusePublic.get(`/reviews/${id}`);
+        const serverReviews = reviewsRes.data || [];
+
+        // Fetch locally saved reviews (if any)
+        const localReviewsStr = localStorage.getItem(localStorageKey);
+        let localReviews = [];
+        try {
+          localReviews = localReviewsStr ? JSON.parse(localReviewsStr) : [];
+        } catch (e) {
+          console.error("Invalid local reviews data", e);
+          localReviews = [];
         }
+
+        // Merge server reviews + local reviews but avoid duplicates by _id
+        // Assume local reviews have _id property, if not we add some temp id
+        const allReviewsMap = new Map();
+
+        serverReviews.forEach((r) => {
+          if (r._id) allReviewsMap.set(r._id, r);
+        });
+        localReviews.forEach((r) => {
+          if (r._id && !allReviewsMap.has(r._id)) {
+            allReviewsMap.set(r._id, r);
+          } else if (!r._id) {
+            // If no id in local, create a temp id to avoid duplicates
+            const tempId = `local-${Math.random().toString(36).substring(2, 9)}`;
+            allReviewsMap.set(tempId, { ...r, _id: tempId });
+          }
+        });
+
+        const mergedReviews = Array.from(allReviewsMap.values()).sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        );
+
+        setBookReviews(mergedReviews);
+
+        // Load liked books from localStorage
+        const storedLikes = JSON.parse(localStorage.getItem("likedBooks") || "[]");
+        setLikedBooks(new Set(storedLikes));
       } catch (error) {
-        toast.error("Failed to load book details.");
+        toast.error("Failed to load book or reviews.");
+        console.error(error);
+      } finally {
+        setLoading(false);
       }
     };
 
+    fetchData();
+  }, [id, axiusePublic, localStorageKey]);
 
-    const fetchReviews = async () => {
-      try {
-        const response = await axiusePublic.get(`/reviews/${id}`);
-        setBookReviews(response.data);
-      } catch (error) {
-        toast.error("Failed to load reviews.");
-      }
-    };
-
-    fetchBook();
-    fetchReviews();
-  }, [id, axiusePublic, currentUser.email]);
-
-  useEffect(() => {
-    const storedVotes = JSON.parse(localStorage.getItem("votedBooks") || "[]");
-    setVotedBooks(new Set(storedVotes));
-
-    const storedLikes = JSON.parse(localStorage.getItem("likedBooks") || "[]");
-    setLikedBooks(new Set(storedLikes));
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem("votedBooks", JSON.stringify(Array.from(votedBooks)));
-  }, [votedBooks]);
-
+  // Sync likedBooks state with localStorage
   useEffect(() => {
     localStorage.setItem("likedBooks", JSON.stringify(Array.from(likedBooks)));
   }, [likedBooks]);
 
+  // Sync reviews to localStorage on every update
+  useEffect(() => {
+    // Save reviews only locally
+    if (id) {
+      localStorage.setItem(localStorageKey, JSON.stringify(bookReviews));
+    }
+  }, [bookReviews, localStorageKey, id]);
+
+  // Toggle like/unlike book
   const handleLike = async (bookId) => {
     try {
-      const response = await axiusePublic.patch(`/like/${bookId}`, {
+      const res = await axiusePublic.patch(`/like/${bookId}`, {
         email: currentUser.email,
       });
 
-      const liked = response.data?.liked;
+      const liked = res.data?.liked;
 
       setCurrentBook((prev) => ({
         ...prev,
         likedBy: liked
-          ? [...(prev.likedBy || []), currentUser?.email]
-          : (prev.likedBy || []).filter((e) => e !== currentUser?.email),
+          ? [...(prev?.likedBy || []), currentUser.email]
+          : (prev?.likedBy || []).filter((e) => e !== currentUser.email),
       }));
 
       setLikedBooks((prev) => {
         const newSet = new Set(prev);
-        liked ? newSet.add(bookId) : newSet.delete(bookId);
+        if (liked) newSet.add(bookId);
+        else newSet.delete(bookId);
         return newSet;
       });
 
       toast.success(liked ? "Liked the book!" : "Unliked the book!");
     } catch (error) {
       toast.error("Failed to like the book.");
+      console.error(error);
     }
   };
 
+  // Submit a new review
   const handleSubmitReview = async () => {
     if (!newReview.trim()) {
       toast.error("Review cannot be empty.");
       return;
     }
 
+    if (!id) {
+      toast.error("Invalid book ID.");
+      return;
+    }
+
     try {
       const reviewData = {
+        itemId: id,
         user: {
           name: currentUser.displayName,
           email: currentUser.email,
           avatar: currentUser.photoURL || null,
         },
         text: newReview.trim(),
-        rating: 5,
+        rating: 5, // You may want to allow user to select rating instead of hardcoding
       };
 
-      const response = await axiusePublic.post(`/reviews/${id}`, reviewData);
+      // Post to server
+      const res = await axios.post(`https://assignment-server-11-dun.vercel.app/reviews`, reviewData);
+      const insertedId = res.data?.reviewId;
 
-      const insertedId = response.data?.reviewId;
-
-      if (insertedId) {
-        const newPostedReview = {
-          _id: insertedId,
-          ...reviewData,
-          createdAt: new Date().toISOString(),
-        };
-
-        setBookReviews((prev) => [newPostedReview, ...prev]);
-        toast.success("Review posted successfully!");
-        setNewReview("");
-      } else {
-        toast.error("Something went wrong. Review not saved.");
+      if (!insertedId) {
+        toast.error("Failed to post review.");
+        return;
       }
+
+      const newPostedReview = {
+        _id: insertedId,
+        ...reviewData,
+        createdAt: new Date().toISOString(),
+      };
+
+      setBookReviews((prev) => [newPostedReview, ...prev]);
+      setNewReview("");
+      toast.success("Review posted successfully!");
     } catch (error) {
+      console.error("Submit review error:", error);
       toast.error(error.response?.data?.error || "Failed to post review.");
     }
   };
 
-  const handleDeleteReview = async (reviewId) => {
+  // Update an existing review
+  const handleUpdateReview = async () => {
+    if (!newReview.trim()) {
+      toast.error("Review cannot be empty.");
+      return;
+    }
+
     try {
-      await axiusePublic.delete(`/reviews/${reviewId}`);
-      setBookReviews((prev) => prev.filter((review) => review._id !== reviewId));
-      toast.success("Review deleted.");
+      const res = await axios.put(
+        `https://assignment-server-11-dun.vercel.app/reviews/${editingReviewId}`,
+        { text: newReview.trim() }
+      );
+
+      if (res.data.modifiedCount) {
+        setBookReviews((prev) =>
+          prev.map((review) =>
+            review._id === editingReviewId ? { ...review, text: newReview.trim() } : review
+          )
+        );
+        toast.success("Review updated successfully!");
+        setEditingReviewId(null);
+        setNewReview("");
+      } else {
+        toast.error("No changes made.");
+      }
     } catch (error) {
-      toast.error("Failed to delete review.");
+      toast.error("Error updating review.");
+      console.error(error);
     }
   };
 
+  // Delete a review by id
+  const handleDeleteReview = async (reviewId) => {
+    try {
+      // Delete from server
+      await axiusePublic.delete(`/reviews/${reviewId}`);
+      setBookReviews((prev) => prev.filter((review) => review._id !== reviewId));
+      toast.success("Review deleted.");
+
+      if (editingReviewId === reviewId) {
+        setEditingReviewId(null);
+        setNewReview("");
+      }
+    } catch (error) {
+      toast.error("Failed to delete review.");
+      console.error(error);
+    }
+  };
+
+  // Start editing a review (load text in input)
+  const startEditingReview = (review) => {
+    setEditingReviewId(review._id);
+    setNewReview(review.text);
+  };
+
+  // Cancel editing review
+  const handleCancelEdit = () => {
+    setEditingReviewId(null);
+    setNewReview("");
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (!currentBook) {
+    return <div className="text-center text-gray-500">Book not found.</div>;
+  }
+
   return (
-    <div className="min-h-screen pt-16 bg-gray-100 dark:bg-gray-900 px-4 py-8">
-
-      {currentBook ? (
-        <div className="max-w-6xl mx-auto grid gap-8 lg:grid-cols-3">
-          {(() => {
-            const {
-              title,
-              author,
-              coverPhoto,
-              totalPages,
-              category,
-              readingStatus,
-              overview,
-              rating,
-              likedBy = [],
-              userEmail,
-              userName,
-              _id,
-            } = currentBook;
-
-            return (
-              <>
-                {/* Book Card */}
-
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.6 }}
-                  className="bg-white dark:bg-gray-800 rounded-lg shadow p-6"
-                >
-                  <div className="text-center">
-                    <img
-                      src={coverPhoto || "https://via.placeholder.com/300x400?text=No+Cover"}
-                      alt={title || "Book Cover"}
-                      className="mx-auto mb-4 rounded-lg shadow"
-                    />
-                    <div className="mb-4 flex justify-center space-x-2">
-                      <span className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded text-sm">
-                        {category || "No Category"}
-                      </span>
-                      <span
-                        className={`text-white px-2 py-1 rounded text-sm ${readingStatus === "Read"
-                          ? "bg-green-500"
-                          : readingStatus === "Reading"
-                            ? "bg-blue-500"
-                            : "bg-orange-500"
-                          }`}
-                      >
-                        {readingStatus || "Unknown"}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-center gap-4 mb-4">
-                      {/* Star */}
-                      <div className="flex items-center gap-1 text-yellow-500">
-                        <Star className="w-5 h-5 fill-yellow-400" />
-                        <span>
-                          {typeof rating === 'number' ? rating.toFixed(1) : "N/A"}
-                        </span>
-                      </div>
-
-                      {/* Like Button */}
-                      <button
-                        onClick={() => handleLike(_id)}
-                        className={`text-sm px-2 py-1 rounded border transition-colors duration-200 ${likedBooks.has(_id)
-                          ? "bg-pink-100 border-pink-300 text-pink-600 dark:bg-pink-900 dark:border-pink-600 dark:text-pink-400"
-                          : "bg-white border-gray-300 text-gray-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-400"
-                          }`}
-                      >
-                        ❤️ {likedBy.length || 0}
-                      </button>
-                    </div>
 
 
-                    <p className="text-sm text-gray-600 dark:text-gray-300">
-                      <strong>Added by:</strong> {userName || "Unknown"}
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">
-                      <strong>Email:</strong> {userEmail || "N/A"}
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-                      <strong>Total Pages:</strong> {totalPages || "?"}
-                    </p>
-                  </div>
-                </motion.div>
+    // ...
 
-                {/* Right column: Details & Reviews */}
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.6 }}
-                  className="lg:col-span-2 space-y-6"
-                >
-                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-                    <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">{title || "Untitled"}</h2>
-                    <p className="text-lg text-gray-600 dark:text-gray-300 mb-4">by {author || "Unknown"}</p>
-                    <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">Overview</h3>
-                    <p className="text-gray-700 dark:text-gray-300">{overview || "No overview available."}</p>
-                  </div>
+    <div className="min-h-screen pt-16 px-4 sm:px-6 lg:px-3 pb-10 bg-gray-100 dark:bg-gray-900">
+      <div className="grid gap-2 lg:grid-cols-3">
+        {/* Left column: Book Card */}
+        <Cards
+          coverPhoto={currentBook.coverPhoto}
+          title={currentBook.title}
+          author={currentBook.author}
+          category={currentBook.category}
+          readingStatus={currentBook.readingStatus}
+          rating={currentBook.rating}
+          likedByCount={currentBook.likedBy?.length || 0}
+          liked={likedBooks.has(currentBook._id)}
+          onLikeToggle={() => handleLike(currentBook._id)}
+          userName={currentBook.userName}
+          userEmail={currentBook.userEmail}
+          totalPages={currentBook.totalPages}
+          book={currentBook}
+          likedBooks={likedBooks}
+          handleLike={handleLike}
+          currentUserEmail={getCurrentUserEmail(currentUser)}
+        />
 
-                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-                    <div className="flex items-center gap-2 mb-4">
-                      <MessageCircle className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Write a Review</h3>
-                    </div>
-                    <textarea
-                      rows="4"
-                      placeholder="Share your thoughts..."
-                      className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
-                      value={newReview}
-                      onChange={(e) => setNewReview(e.target.value)}
-                    />
-                    <button
-                      onClick={handleSubmitReview}
-                      disabled={!newReview.trim()}
-                      className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded transition-colors duration-200"
-                    >
-                      Submit Review
-                    </button>
-                  </div>
+        {/* Right column with animation */}
+        <motion.div
+          className="lg:col-span-2 space-y-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+        >
+          {/* Book Overview */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+            <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">
+              {currentBook.title || "Untitled"}
+            </h2>
+            <p className="text-lg text-gray-600 dark:text-gray-300 mb-4">
+              by {currentBook.author || "Unknown"}
+            </p>
+            <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">
+              Overview
+            </h3>
+            <p className="text-gray-700 dark:text-gray-300">
+              {currentBook.overview || "No overview available."}
+            </p>
+          </div>
 
-                  <ReviewSection
-                    currentUser={currentUser}
-                    bookReviews={bookReviews}
-                    setBookReviews={setBookReviews}
-                    handleDeleteReview={handleDeleteReview}
-                  // Pass dark mode styles if your ReviewSection supports it
-                  />
-                </motion.div>
-              </>
-            );
-          })()}
-        </div>
-      ) : (
-        <div className="text-center text-gray-600 dark:text-gray-400">
-          <LoadingSpinner />
-        </div>
-      )}
+          {/* Review Form */}
+          <ReviewForm
+            newReview={newReview}
+            setNewReview={setNewReview}
+            isEditing={!!editingReviewId}
+            handleSubmitReview={handleSubmitReview}
+            handleUpdateReview={handleUpdateReview}
+            handleCancelEdit={handleCancelEdit}
+            handleDeleteReview={handleDeleteReview}
+          />
+
+          {/* Review List */}
+          <ReviewSection
+            currentUser={currentUser}
+            bookReviews={bookReviews}
+            handleDeleteReview={handleDeleteReview}
+            startEditingReview={startEditingReview}
+          />
+        </motion.div>
+      </div>
     </div>
+
   );
 };
 

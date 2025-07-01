@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router"; // ✅ Corrected from "react-router"
+import { Link } from "react-router"; // react-router-dom v6+
 import { motion } from "framer-motion";
 import LoadingSpinner from "../../LoadingSpinner/LoadingSpinner";
 import { useAxiosPublic } from "../../../hooks/useAxiosePublic";
 import useAuth from "../../../hooks/useAuth";
-import { Eye } from "lucide-react";
 import { Helmet } from "react-helmet";
 
 const statusColors = {
@@ -129,68 +128,51 @@ const Bookshelf = () => {
                   const isLiked = book.likedBy?.includes(user?.email);
                   const likeCount = book.likedBy?.length || 0;
 
-                  // const handleLike = () => {
-                  //   if (user?.email === book.email)
-                  //     return alert("Lojja korena?");
-                  //   axiosPublic
-                  //     .patch(`/like/${book._id}`, { email: user?.email })
-                  //     .then((res) => {
-                  //       const updatedBooks = books.map((b) =>
-                  //         b._id === book._id
-                  //           ? {
-                  //             ...b,
-                  //             likedBy: res.data.liked
-                  //               ? [...(b.likedBy || []), user?.email]
-                  //               : (b.likedBy || []).filter(
-                  //                 (e) => e !== user?.email
-                  //               ),
-                  //           }
-                  //           : b
-                  //       );
-                  //       setBooks(updatedBooks);
-                  //     })
-                  //     .catch((err) => console.error(err));
-                  // };
-
                   return (
                     <motion.div
                       key={book._id}
-                      className="bg-white dark:bg-gray-800 p-4 rounded shadow"
+                      className="bg-white dark:bg-gray-800 p-4 rounded shadow flex flex-col"
                       whileHover={{ scale: 1.02 }}
                     >
-                      <img
-                        src={book.coverPhoto}
-                        alt={book.title}
-                        className="h-48 w-full object-cover rounded mb-2"
-                      />
-                      <h2 className="text-lg font-semibold">{book.title}</h2>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                      <div className="relative h-48 shrink-0 rounded overflow-hidden mb-3">
+                        <img
+                          src={book.coverPhoto || "/placeholder.svg"}
+                          alt={book.title}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+
+                      <h2 className="text-lg font-semibold line-clamp-2">{book.title}</h2>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1 line-clamp-2">
                         {book.author}
                       </p>
-                      
-                      <p className="text-sm mt-1 line-clamp-3">
-                        {book.description}
+
+                      <p className="text-sm text-gray-700 dark:text-gray-300 flex-grow line-clamp-3">
+                        {book.description || "No description available."}
                       </p>
-                      <div className="flex justify-between items-center mt-3">
+
+                      <div className="mt-4 flex items-center justify-between">
                         <button
-                          // onClick={handleLike}
-                          className={`text-sm px-2 py-1 rounded ${isLiked
+                          className={`text-sm px-2 py-1 rounded ${
+                            isLiked
                               ? "bg-red-500 text-white"
                               : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200"
-                            }`}
+                          }`}
                         >
                           ❤️ {likeCount}
                         </button>
                         <Link
                           to={`/books/${book._id}`}
-                          className="flex items-center gap-2 bg-blue-600 text-white px-1 rounded shadow-md hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-300 focus:ring-offset-1 duration-300 transform hover:translate-x-2 hover:shadow-lg dark:shadow-blue-700"
+                          className="flex items-center gap-2 bg-blue-600 text-white px-3 py-1 rounded shadow-md hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-300 focus:ring-offset-1 duration-300 transform hover:translate-x-1 hover:shadow-lg dark:shadow-blue-700"
                         >
-                          <Eye />
+                          See More
                         </Link>
                       </div>
+
                       <span
-                        className={`mt-2 inline-block px-2 py-1 text-xs font-medium rounded ${statusColors[book.status]
-                          } text-white`}
+                        className={`mt-3 inline-block px-2 py-1 text-xs font-medium rounded ${
+                          statusColors[book.status]
+                        } text-white`}
                       >
                         {book.status}
                       </span>
@@ -219,7 +201,7 @@ const Bookshelf = () => {
             </>
           ) : (
             <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-              <LoadingSpinner />
+              No books found.
             </div>
           )}
         </>

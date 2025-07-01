@@ -3,7 +3,7 @@ import useAuth from "./useAuth";
 
 
 const axiosIntance = axios.create({
-    baseURL: 'https://assignment-server-11-dun.vercel.app',
+    baseURL: 'http://localhost:3000',
     withCredentials: true
 
 })

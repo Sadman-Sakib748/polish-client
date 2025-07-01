@@ -44,7 +44,7 @@ const AuthProviders = ({ children }) => {
             setUser(currentUser);
             if (currentUser?.email) {
                 const user = { email: currentUser.email }
-                axios.post('https://assignment-server-11-dun.vercel.app/jwt', user, {
+                axios.post('http://localhost:3000/jwt', user, {
                     withCredentials: true
                 })
                     .then(res => {
@@ -52,7 +52,7 @@ const AuthProviders = ({ children }) => {
                         setLoading(false);
                     })
             } else {
-                axios.post('https://assignment-server-11-dun.vercel.app/logout', {}, {
+                axios.post('http://localhost:3000/logout', {}, {
                     withCredentials: true
                 })
                     .then(res => {

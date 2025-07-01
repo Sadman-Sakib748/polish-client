@@ -1,178 +1,106 @@
-"use client"
+import { Swiper, SwiperSlide } from 'swiper/react';
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
 
-import { useState, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { ChevronLeft, ChevronRight } from "lucide-react"
-import LoadingSpinner from "../../LoadingSpinner/LoadingSpinner"
-import { Helmet } from "react-helmet"
+import img1 from '../../../assets/img1.jpg';
+import img2 from '../../../assets/img2.jpg';
+import img3 from '../../../assets/img3.jpg';
 
+
+
+
+import SwiperCore from 'swiper';
+import { Navigation, Pagination, Autoplay } from 'swiper/modules';
+import { Link, useParams } from 'react-router';
+
+SwiperCore.use([Navigation, Pagination, Autoplay]);
 
 const BannerHome = () => {
-  const [bannerSlides, setBannerSlides] = useState([])
-  const [currentSlide, setCurrentSlide] = useState(0)
-  const [isImageLoading, setIsImageLoading] = useState(true)
-  const [isLoadingData, setIsLoadingData] = useState(true)
-
-  useEffect(() => {
-    fetch("/bannerSlides.json")
-      .then((res) => res.json())
-      .then((data) => {
-        setBannerSlides(data)
-        setIsLoadingData(false)
-      })
-      .catch((error) => {
-        console.error("Failed to load banner data:", error)
-        setIsLoadingData(false)
-      })
-  }, [])
-
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % bannerSlides.length)
-    setIsImageLoading(true)
-  }
-
-  const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + bannerSlides.length) % bannerSlides.length)
-    setIsImageLoading(true)
-  }
-
-  useEffect(() => {
-    if (bannerSlides.length > 0) {
-      const img = new Image()
-      img.src = bannerSlides[currentSlide].image
-      img.onload = () => setIsImageLoading(false)
-    }
-  }, [currentSlide, bannerSlides])
-
-  if (isLoadingData) {
-    return (
-      <section className="w-full h-screen flex items-center justify-center bg-black text-white">
-        <LoadingSpinner />
-      </section>
-    )
-  }
-
-  if (bannerSlides.length === 0) {
-    return (
-      <section className="w-full h-screen flex items-center justify-center bg-black text-white">
-        <p>No slides available.</p>
-      </section>
-    )
-  }
+  const { id } = useParams();
 
   return (
-    <section className="relative w-full h-screen overflow-hidden bg-black dark:bg-zinc-900">
-      {/* Helmet Meta Info */}
-      <Helmet>
-        <title>Books | Home</title>
-      </Helmet>
-
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={bannerSlides[currentSlide].id}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.8 }}
-          className="absolute inset-0 flex items-center justify-center text-white text-center"
-        >
-          <motion.img
-            src={bannerSlides[currentSlide].image}
-            alt="Banner"
-            initial={{ scale: 1.1 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 0.8 }}
-            className="absolute inset-0 h-full w-full object-cover"
+    <Swiper
+      spaceBetween={30}
+      slidesPerView={1}
+      navigation
+      pagination={{ clickable: true }}
+      loop={true}
+      autoplay={{ delay: 3000 }}
+    >
+      {/* Slide 1 */}
+      <SwiperSlide>
+        <div className="relative w-full h-[400px]">
+          <img
+            src={img1}
+            alt="Banner 1"
+            className="absolute inset-0 w-full h-full object-cover"
           />
-
-          <div className="absolute inset-0 bg-black/60 dark:bg-zinc-900/70 backdrop-blur-[3px]"></div>
-
-          {isImageLoading ? (
-            <div className="z-20 text-white flex flex-col items-center">
-              <div className="h-10 w-10 border-4 border-white border-t-transparent rounded-full animate-spin mb-4" />
-              <p className="text-lg font-semibold">Loading...</p>
+          <div className="relative z-10 flex items-center h-full px-10 text-white bg-opacity-40">
+            <div className="max-w-xl">
+              <h2 className="text-4xl font-bold mb-4">Discover Your Next Great Read</h2>
+              <p className="mb-6 text-lg">
+                Join thousands of book lovers in building their digital library
+              </p>
+              <Link to={`/Bookshelf`}>
+                <button className="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded shadow-lg transition">
+                  Start Reading
+                </button>
+              </Link>
             </div>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="relative z-10 max-w-4xl px-6 md:px-10"
-            >
-              <motion.h1
-                initial={{ opacity: 0, x: -50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="mb-4 text-4xl md:text-6xl font-extrabold text-white drop-shadow-xl dark:text-white"
-              >
-                {bannerSlides[currentSlide].title}
-              </motion.h1>
-              <motion.p
-                initial={{ opacity: 0, x: 50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.4 }}
-                className="mb-8 text-lg md:text-2xl text-gray-200 dark:text-gray-300"
-              >
-                {bannerSlides[currentSlide].subtitle}
-              </motion.p>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.6 }}
-                className="rounded-full bg-gradient-to-r from-blue-500 to-cyan-400 px-8 py-3 text-lg font-semibold text-white shadow-md hover:from-blue-600 hover:to-cyan-500 transition"
-              >
-                {bannerSlides[currentSlide].cta}
-              </motion.button>
-            </motion.div>
-          )}
-        </motion.div>
-      </AnimatePresence>
+          </div>
+        </div>
+      </SwiperSlide>
 
-      {/* Navigation Arrows */}
-      <motion.button
-        onClick={prevSlide}
-        aria-label="Previous Slide"
-        whileHover={{ scale: 1.2 }}
-        whileTap={{ scale: 0.9 }}
-        className="absolute left-4 top-1/2 -translate-y-1/2 z-20 rounded-full bg-white/10 dark:bg-white/20 p-2 text-white hover:bg-white/20 transition"
-      >
-        <ChevronLeft className="h-6 w-6" />
-      </motion.button>
-      <motion.button
-        onClick={nextSlide}
-        aria-label="Next Slide"
-        whileHover={{ scale: 1.2 }}
-        whileTap={{ scale: 0.9 }}
-        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 rounded-full bg-white/10 dark:bg-white/20 p-2 text-white hover:bg-white/20 transition"
-      >
-        <ChevronRight className="h-6 w-6" />
-      </motion.button>
-
-      {/* Dots Navigation */}
-      <div className="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 space-x-3">
-        {bannerSlides.map((_, index) => (
-          <motion.button
-            key={index}
-            onClick={() => {
-              setCurrentSlide(index)
-              setIsImageLoading(true)
-            }}
-            whileHover={{ scale: 1.2 }}
-            whileTap={{ scale: 0.95 }}
-            className={`
-              w-4 h-4 rounded-full 
-              ${index === currentSlide
-                ? "bg-white dark:bg-cyan-400 scale-125 shadow"
-                : "bg-white/30 dark:bg-blue-500 hover:bg-white/50"}
-              transition duration-300
-            `}
+      {/* Slide 2 */}
+      <SwiperSlide>
+        <div className="relative w-full h-[400px]">
+          <img
+            src={img2}
+            alt="Banner 2"
+            className="absolute inset-0 w-full h-full object-cover"
           />
-        ))}
-      </div>
-    </section>
-  )
-}
+          <div className="relative z-10 flex items-center h-full px-10 text-white  bg-opacity-40">
+            <div className="max-w-xl">
+              <h2 className="text-4xl font-bold mb-4">Track Your Reading Journey</h2>
+              <p className="mb-6 text-lg">
+                Monitor your progress and celebrate your achievements
+              </p>
+              <Link to={`/profile`}>
+                <button className="bg-green-600 hover:bg-green-700 px-6 py-2 rounded shadow-lg transition">
+                  View Progress
+                </button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </SwiperSlide>
 
-export default BannerHome
+      {/* Slide 3 */}
+      <SwiperSlide>
+        <div className="relative w-full h-[400px]">
+          <img
+            src={img3}
+            alt="Banner 3"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          <div className="relative z-10 flex items-center h-full px-10 text-white  bg-opacity-40">
+            <div className="max-w-xl">
+              <h2 className="text-4xl font-bold mb-4">Share Your Reviews</h2>
+              <p className="mb-6 text-lg">
+                Help others discover amazing books through your insights
+              </p>
+              <Link>
+                <button className="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded shadow-lg transition">
+                  Write Review
+                </button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </SwiperSlide>
+    </Swiper>
+  );
+};
+
+export default BannerHome;

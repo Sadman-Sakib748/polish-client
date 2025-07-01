@@ -3,6 +3,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
 import { app } from "../firebase/firebase.config";
 import axios from "axios";
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext(null);
 const auth = getAuth(app);
 const AuthProviders = ({ children }) => {
@@ -43,7 +44,7 @@ const AuthProviders = ({ children }) => {
             console.log(currentUser, "profile");
             setUser(currentUser);
             if (currentUser?.email) {
-                const user = { email: currentUser.email }
+                const user = { email: currentUser?.email }
                 axios.post('http://localhost:3000/jwt', user, {
                     withCredentials: true
                 })
@@ -52,7 +53,7 @@ const AuthProviders = ({ children }) => {
                         setLoading(false);
                     })
             } else {
-                axios.post('http://localhost:3000/logout', {}, {
+                axios.post('http://localhost:3000/logout', {
                     withCredentials: true
                 })
                     .then(res => {

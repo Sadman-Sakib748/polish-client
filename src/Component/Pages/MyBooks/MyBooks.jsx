@@ -3,12 +3,12 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useAxiosPublic } from "../../../hooks/useAxiosePublic";
 import useAuth from "../../../hooks/useAuth";
-import { motion } from "framer-motion";
 import LoadingSpinner from "../../LoadingSpinner/LoadingSpinner";
 import Cards from "../Cards/Cards";
 import ReviewForm from "../ReviewForm/ReviewForm";
 import ReviewSection from "../ReviewSection/ReviewSection";
 import axios from "axios";
+import { motion } from "framer-motion";
 
 const MyBooks = () => {
   const { id } = useParams();
@@ -28,10 +28,7 @@ const MyBooks = () => {
     photoURL: null,
   };
 
-  // Helper to get email safely
   const getCurrentUserEmail = (user) => user?.email || "unknown@example.com";
-
-  // Key for localStorage for reviews per book id
   const localStorageKey = `reviews_book_${id}`;
 
   useEffect(() => {
@@ -40,36 +37,26 @@ const MyBooks = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Fetch book details
         const bookRes = await axiusePublic.get(`/books/${id}`);
         setCurrentBook(bookRes.data);
 
-        // Fetch reviews for the book from server
         const reviewsRes = await axiusePublic.get(`/reviews/${id}`);
         const serverReviews = reviewsRes.data || [];
 
-        // Fetch locally saved reviews (if any)
         const localReviewsStr = localStorage.getItem(localStorageKey);
         let localReviews = [];
         try {
           localReviews = localReviewsStr ? JSON.parse(localReviewsStr) : [];
-        } catch (e) {
-          console.error("Invalid local reviews data", e);
+        } catch {
           localReviews = [];
         }
 
-        // Merge server reviews + local reviews but avoid duplicates by _id
-        // Assume local reviews have _id property, if not we add some temp id
         const allReviewsMap = new Map();
-
-        serverReviews.forEach((r) => {
-          if (r._id) allReviewsMap.set(r._id, r);
-        });
+        serverReviews.forEach((r) => r._id && allReviewsMap.set(r._id, r));
         localReviews.forEach((r) => {
           if (r._id && !allReviewsMap.has(r._id)) {
             allReviewsMap.set(r._id, r);
           } else if (!r._id) {
-            // If no id in local, create a temp id to avoid duplicates
             const tempId = `local-${Math.random().toString(36).substring(2, 9)}`;
             allReviewsMap.set(tempId, { ...r, _id: tempId });
           }
@@ -78,10 +65,8 @@ const MyBooks = () => {
         const mergedReviews = Array.from(allReviewsMap.values()).sort(
           (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
         );
-
         setBookReviews(mergedReviews);
 
-        // Load liked books from localStorage
         const storedLikes = JSON.parse(localStorage.getItem("likedBooks") || "[]");
         setLikedBooks(new Set(storedLikes));
       } catch (error) {
@@ -95,20 +80,16 @@ const MyBooks = () => {
     fetchData();
   }, [id, axiusePublic, localStorageKey]);
 
-  // Sync likedBooks state with localStorage
   useEffect(() => {
     localStorage.setItem("likedBooks", JSON.stringify(Array.from(likedBooks)));
   }, [likedBooks]);
 
-  // Sync reviews to localStorage on every update
   useEffect(() => {
-    // Save reviews only locally
     if (id) {
       localStorage.setItem(localStorageKey, JSON.stringify(bookReviews));
     }
   }, [bookReviews, localStorageKey, id]);
 
-  // Toggle like/unlike book
   const handleLike = async (bookId) => {
     try {
       const res = await axiusePublic.patch(`/like/${bookId}`, {
@@ -126,8 +107,7 @@ const MyBooks = () => {
 
       setLikedBooks((prev) => {
         const newSet = new Set(prev);
-        if (liked) newSet.add(bookId);
-        else newSet.delete(bookId);
+        liked ? newSet.add(bookId) : newSet.delete(bookId);
         return newSet;
       });
 
@@ -138,17 +118,9 @@ const MyBooks = () => {
     }
   };
 
-  // Submit a new review
   const handleSubmitReview = async () => {
-    if (!newReview.trim()) {
-      toast.error("Review cannot be empty.");
-      return;
-    }
-
-    if (!id) {
-      toast.error("Invalid book ID.");
-      return;
-    }
+    if (!newReview.trim()) return toast.error("Review cannot be empty.");
+    if (!id) return toast.error("Invalid book ID.");
 
     try {
       const reviewData = {
@@ -159,17 +131,13 @@ const MyBooks = () => {
           avatar: currentUser.photoURL || null,
         },
         text: newReview.trim(),
-        rating: 5, // You may want to allow user to select rating instead of hardcoding
+        rating: 5,
       };
 
-      // Post to server
-      const res = await axios.post(`https://assignment-server-11-dun.vercel.app/reviews`, reviewData);
+      const res = await axios.post(`http://localhost:3000/reviews`, reviewData);
       const insertedId = res.data?.reviewId;
 
-      if (!insertedId) {
-        toast.error("Failed to post review.");
-        return;
-      }
+      if (!insertedId) return toast.error("Failed to post review.");
 
       const newPostedReview = {
         _id: insertedId,
@@ -181,21 +149,17 @@ const MyBooks = () => {
       setNewReview("");
       toast.success("Review posted successfully!");
     } catch (error) {
-      console.error("Submit review error:", error);
-      toast.error(error.response?.data?.error || "Failed to post review.");
+      toast.error("Failed to post review.");
+      console.error(error);
     }
   };
 
-  // Update an existing review
   const handleUpdateReview = async () => {
-    if (!newReview.trim()) {
-      toast.error("Review cannot be empty.");
-      return;
-    }
+    if (!newReview.trim()) return toast.error("Review cannot be empty.");
 
     try {
       const res = await axios.put(
-        `https://assignment-server-11-dun.vercel.app/reviews/${editingReviewId}`,
+        `http://localhost:3000/reviews/${editingReviewId}`,
         { text: newReview.trim() }
       );
 
@@ -217,14 +181,11 @@ const MyBooks = () => {
     }
   };
 
-  // Delete a review by id
   const handleDeleteReview = async (reviewId) => {
     try {
-      // Delete from server
       await axiusePublic.delete(`/reviews/${reviewId}`);
       setBookReviews((prev) => prev.filter((review) => review._id !== reviewId));
       toast.success("Review deleted.");
-
       if (editingReviewId === reviewId) {
         setEditingReviewId(null);
         setNewReview("");
@@ -235,13 +196,11 @@ const MyBooks = () => {
     }
   };
 
-  // Start editing a review (load text in input)
   const startEditingReview = (review) => {
     setEditingReviewId(review._id);
     setNewReview(review.text);
   };
 
-  // Cancel editing review
   const handleCancelEdit = () => {
     setEditingReviewId(null);
     setNewReview("");
@@ -260,13 +219,8 @@ const MyBooks = () => {
   }
 
   return (
-
-
-    // ...
-
     <div className="min-h-screen pt-16 px-4 sm:px-6 lg:px-3 pb-10 bg-gray-100 dark:bg-gray-900">
       <div className="grid gap-2 lg:grid-cols-3">
-        {/* Left column: Book Card */}
         <Cards
           coverPhoto={currentBook.coverPhoto}
           title={currentBook.title}
@@ -280,20 +234,15 @@ const MyBooks = () => {
           userName={currentBook.userName}
           userEmail={currentBook.userEmail}
           totalPages={currentBook.totalPages}
-          book={currentBook}
-          likedBooks={likedBooks}
-          handleLike={handleLike}
           currentUserEmail={getCurrentUserEmail(currentUser)}
         />
 
-        {/* Right column with animation */}
         <motion.div
           className="lg:col-span-2 space-y-8"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
-          {/* Book Overview */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
             <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">
               {currentBook.title || "Untitled"}
@@ -309,7 +258,6 @@ const MyBooks = () => {
             </p>
           </div>
 
-          {/* Review Form */}
           <ReviewForm
             newReview={newReview}
             setNewReview={setNewReview}
@@ -320,7 +268,6 @@ const MyBooks = () => {
             handleDeleteReview={handleDeleteReview}
           />
 
-          {/* Review List */}
           <ReviewSection
             currentUser={currentUser}
             bookReviews={bookReviews}
@@ -330,7 +277,6 @@ const MyBooks = () => {
         </motion.div>
       </div>
     </div>
-
   );
 };
 

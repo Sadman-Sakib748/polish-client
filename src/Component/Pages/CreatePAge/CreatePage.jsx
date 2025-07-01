@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router";
+import { useParams, Link } from "react-router"; // react-router-dom for Link and useParams
 import useAuth from "../../../hooks/useAuth";
 import DeleteModal from "../DeleteModal/DeleteModal";
 import Filters from "../Modal/Filters";
@@ -7,17 +7,15 @@ import Stats from "../Modal/Stats";
 import Header from "../Modal/Header";
 import LoadingSpinner from "../../LoadingSpinner/LoadingSpinner";
 import CreateBookForm from "../Modal/CreateBookForm";
-import { useAxiosPublic } from "../../../hooks/useAxiosePublic";
 import useAxiousSecure from "../../../hooks/useAxiousSecure";
-import { Link } from "react-router";
 import { Edit, Trash, Star, Eye } from "lucide-react";
+import toast from "react-hot-toast";
 
 const CreatePage = () => {
   const { user, loading: authLoading } = useAuth();
   const { email: paramEmail } = useParams();
   const userEmail = paramEmail || user?.email;
 
-  const axiosPublic = useAxiosPublic();
   const axiosSecure = useAxiousSecure();
 
   const [books, setBooks] = useState([]);
@@ -30,8 +28,8 @@ const CreatePage = () => {
 
   const [bookToDelete, setBookToDelete] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [editBook, setEditBook] = useState(null);
 
+  // Fetch user books on load & user change
   useEffect(() => {
     if (authLoading || !userEmail) return;
 
@@ -45,57 +43,49 @@ const CreatePage = () => {
       })
       .catch((err) => {
         setError("Failed to fetch books.");
+        console.error(err);
       })
       .finally(() => {
         setLoading(false);
       });
   }, [authLoading, userEmail, axiosSecure]);
 
+  // DELETE Book handler
   const handleDeleteBook = async (bookId) => {
     try {
       await axiosSecure.delete(`/books/${bookId}`);
       setBooks((prev) => prev.filter((book) => book._id !== bookId));
       setBookToDelete(null);
+      toast.success("Book deleted successfully");
     } catch (err) {
-      alert("Failed to delete the book.");
+      toast.error("Failed to delete the book.");
+      console.error(err);
     }
   };
 
+  // CREATE Book handler
   const createBook = async (bookData) => {
     try {
       const res = await axiosSecure.post("/books", bookData);
       setBooks((prev) => [...prev, res.data]);
       setShowCreateForm(false);
-      setEditBook(null);
+      toast.success("Book created successfully");
     } catch (err) {
-      alert("Failed to create book.");
+      toast.error("Failed to create book.");
+      console.error(err);
     }
   };
 
-  const updateBook = async (bookData) => {
-    if (!editBook) return;
-    try {
-      const res = await axiosSecure.put(`/edits/${editBook._id}`, bookData);
-      setBooks((prev) =>
-        prev.map((b) => (b._id === editBook._id ? res.data : b))
-      );
-      setShowCreateForm(false);
-      setEditBook(null);
-    } catch (err) {
-      alert("Failed to update book.");
-    }
+  // On form submit for create
+  const handleCreateBook = (bookData) => {
+    createBook(bookData);
   };
 
-  const handleCreateOrUpdateBook = (bookData) => {
-    if (editBook) updateBook(bookData);
-    else createBook(bookData);
-  };
-
-  const handleCancel = () => {
+  const handleCancelCreate = () => {
     setShowCreateForm(false);
-    setEditBook(null);
   };
 
+  // Filter books based on search, category, status
   const filteredBooks = books.filter((book) => {
     const matchesSearch =
       book.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -122,7 +112,7 @@ const CreatePage = () => {
     );
 
   // Inline BookRow component
-  const BookRow = ({ book, onDelete, onEdit, index, userEmail }) => {
+  const BookRow = ({ book, onDelete, index }) => {
     const status = book.status || book.readingStatus || "";
 
     const getStatusColor = (status) => {
@@ -212,13 +202,13 @@ const CreatePage = () => {
           >
             <Eye className="inline w-5 h-5" />
           </Link>
-          <button
-            onClick={() => onEdit(book)}
+          <Link
+            to={`/edit/${book._id}`}
             className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
             title="Edit"
           >
             <Edit className="inline w-5 h-5" />
-          </button>
+          </Link>
           <button
             onClick={() => onDelete(book)}
             className="text-red-600 hover:text-red-900"
@@ -236,13 +226,13 @@ const CreatePage = () => {
     <div className="min-h-screen pt-16 bg-gray-50 dark:bg-gray-900 transition-colors duration-500">
       <Header />
 
+      {/* Show create form modal */}
       {showCreateForm && (
         <CreateBookForm
-          onSubmit={handleCreateOrUpdateBook}
-          onCancel={handleCancel}
+          onSubmit={handleCreateBook}
+          onCancel={handleCancelCreate}
           displayName={user?.displayName}
           email={userEmail}
-          defaultValues={editBook || {}}
         />
       )}
 
@@ -281,9 +271,17 @@ const CreatePage = () => {
       />
 
       <section className="py-8 container mx-auto px-4">
-        <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-gray-100">
-          {filteredBooks.length} Book{filteredBooks.length !== 1 && "s"} Found
-        </h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+            {filteredBooks.length} Book{filteredBooks.length !== 1 && "s"} Found
+          </h2>
+          <button
+            onClick={() => setShowCreateForm(true)}
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Add New Book
+          </button>
+        </div>
 
         {filteredBooks.length > 0 ? (
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -323,13 +321,8 @@ const CreatePage = () => {
               {filteredBooks.map((book, i) => (
                 <BookRow
                   key={book._id}
-                  userEmail={userEmail}
                   book={book}
                   onDelete={setBookToDelete}
-                  onEdit={() => {
-                    setEditBook(book);
-                    setShowCreateForm(true);
-                  }}
                   index={i}
                 />
               ))}
@@ -346,7 +339,7 @@ const CreatePage = () => {
         <DeleteModal
           book={bookToDelete}
           onCancel={() => setBookToDelete(null)}
-          onConfirm={handleDeleteBook}
+          onConfirm={() => handleDeleteBook(bookToDelete._id)}
         />
       )}
     </div>

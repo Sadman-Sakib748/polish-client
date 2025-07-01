@@ -1,37 +1,14 @@
+// src/hooks/useAxiosSecure.js
+
 import axios from "axios";
-import useAuth from "./useAuth";
 
+const axiosInstance = axios.create({
+  baseURL: "http://localhost:3000",
+  withCredentials: true, 
+});
 
-const axiosIntance = axios.create({
-    baseURL: 'http://localhost:3000',
-    withCredentials: true
-
-})
-
-const useAxiousSecure = () => {
-    const { user, logOut } = useAuth();
-    axiosIntance.interceptors.request.use(config => {
-        config.headers.authorization = `Bearer ${user.accessToken}`
-        return config;
-    });
-    axiosIntance.interceptors.response.use(response => {
-        return response;
-    }, error => {
-        if (error.status === 401) {
-            // logOut()
-            //     .then(() => {
-            //         console.log('sign out user for 401 status code ')
-            //     })
-            //     .catch(err => {
-            //         console.log(err)
-            //     })
-        }
-        return Promise.reject(error)
-    })
-
-
-    return axiosIntance;
-
+const useAxiosSecure = () => {
+  return axiosInstance;
 };
 
-export default useAxiousSecure;
+export default useAxiosSecure;

@@ -134,7 +134,7 @@ const MyBooks = () => {
         rating: 5,
       };
 
-      const res = await axios.post(`http://localhost:3000/reviews`, reviewData);
+      const res = await axios.post(`https://b11a11-server-side-sadman-sakib748.vercel.app/reviews`, reviewData);
       const insertedId = res.data?.reviewId;
 
       if (!insertedId) return toast.error("Failed to post review.");
@@ -159,7 +159,7 @@ const MyBooks = () => {
 
     try {
       const res = await axios.put(
-        `http://localhost:3000/reviews/${editingReviewId}`,
+        `https://b11a11-server-side-sadman-sakib748.vercel.app/reviews/${editingReviewId}`,
         { text: newReview.trim() }
       );
 

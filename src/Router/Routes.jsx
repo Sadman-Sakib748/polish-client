@@ -17,6 +17,11 @@ import Categories from "../Component/Pages/Categories/Categories";
 import About from "../Component/Pages/About/About";
 import Contact from "../Component/Pages/Contact/Contact";
 import FAQ from "../Component/Pages/FAQ/FAQ";
+import HelpCenter from "../Component/Shared/HelpCenter/HelpCenter";
+import Support from "../Component/Shared/Support/Support";
+import PrivacyPolicy from "../Component/Shared/PrivacyPolicy/PrivacyPolicy";
+import TermsOfService from "../Component/Shared/TermsOfService/TermsOfService";
+import Blog from "../Component/Shared/Blog/Blog";
 
 
 
@@ -50,7 +55,7 @@ export const router = createBrowserRouter([
             {
                 path: 'myGroup/:email',
                 element: <PrivateRoutes><CreatePage></CreatePage></PrivateRoutes>,
-                loader: ({ params }) => fetch(`http://localhost:3000/booking/${params.email}`, {
+                loader: ({ params }) => fetch(`https://b11a11-server-side-sadman-sakib748.vercel.app/booking/${params.email}`, {
                     credentials: 'include'
                 }),
             },
@@ -58,7 +63,7 @@ export const router = createBrowserRouter([
             {
                 path: "books/:id",
                 element: <PrivateRoutes><MyBooks /></PrivateRoutes>,
-                loader: ({ params }) => fetch(`http://localhost:3000/books/${params.id}`,
+                loader: ({ params }) => fetch(`https://b11a11-server-side-sadman-sakib748.vercel.app/books/${params.id}`,
                     {
                         credentials: 'include'
                     }
@@ -68,7 +73,7 @@ export const router = createBrowserRouter([
             {
                 path: "edit/:id",
                 element: <PrivateRoutes><CreateBookForm /></PrivateRoutes>,
-                loader: ({ params }) => fetch(`http://localhost:3000/books/${params.id}`,
+                loader: ({ params }) => fetch(`https://b11a11-server-side-sadman-sakib748.vercel.app/books/${params.id}`,
                     {
                         credentials: 'include'
                     }
@@ -96,6 +101,26 @@ export const router = createBrowserRouter([
             {
                 path: 'Contact',
                 element: <Contact />
+            },
+            {
+                path: 'helpCenter',
+                element: <HelpCenter />
+            },
+            {
+                path: 'support',
+                element: <Support />
+            },
+            {
+                path: 'privacyPolicy',
+                element: <PrivacyPolicy />
+            },
+            {
+                path: 'terms',
+                element: <TermsOfService />
+            },
+            {
+                path: 'blog',
+                element: <Blog />
             },
         ]
     },

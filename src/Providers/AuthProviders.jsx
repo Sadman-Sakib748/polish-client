@@ -45,7 +45,7 @@ const AuthProviders = ({ children }) => {
             setUser(currentUser);
             if (currentUser?.email) {
                 const user = { email: currentUser?.email }
-                axios.post('http://localhost:3000/jwt', user, {
+                axios.post('https://b11a11-server-side-sadman-sakib748.vercel.app/jwt', user, {
                     withCredentials: true
                 })
                     .then(res => {
@@ -53,7 +53,7 @@ const AuthProviders = ({ children }) => {
                         setLoading(false);
                     })
             } else {
-                axios.post('http://localhost:3000/logout', {
+                axios.post('https://b11a11-server-side-sadman-sakib748.vercel.app/logout', {
                     withCredentials: true
                 })
                     .then(res => {

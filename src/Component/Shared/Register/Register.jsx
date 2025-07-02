@@ -145,6 +145,10 @@ const Register = () => {
 
           {/* Google Sign In Button */}
           <GoogleSignInButton handleGoogleSignIn={handleGoogleSignIn} loading={loading} error={error} />
+          <p className="text-center text-sm mt-6 text-gray-700">
+            Don't have an account?{" "}
+            <a href="/login" className="text-green-600 font-medium underline">Register</a>
+          </p>
         </form>
       </div>
     </div>

@@ -275,12 +275,6 @@ const CreatePage = () => {
           <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
             {filteredBooks.length} Book{filteredBooks.length !== 1 && "s"} Found
           </h2>
-          <button
-            onClick={() => setShowCreateForm(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            Add New Book
-          </button>
         </div>
 
         {filteredBooks.length > 0 ? (
